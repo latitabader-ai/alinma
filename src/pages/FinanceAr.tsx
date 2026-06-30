@@ -1,0 +1,329 @@
+import { useState, useMemo } from "react";
+import { MobileContainer } from "@/components/MobileContainer";
+import { Plus, FileSearch, Calculator, UserSquare, Home as HomeIcon, Car, Users, GraduationCap, ChevronRight, AlertTriangle, TrendingDown, Zap, CheckCircle2, Loader2, Building2, FileText, Wallet } from "lucide-react";
+import { Link } from "wouter";
+import { Slider } from "@/components/ui/slider";
+
+const MARGIN_RATE = 0.065;
+
+function calcInstallment(amount: number, months: number) {
+  const total = amount * (1 + MARGIN_RATE * (months / 12));
+  return total / months;
+}
+
+function maxAllowedAmount(salary: number, oblig: number, months = 36) {
+  const maxInstallment = 0.45 * salary - oblig;
+  if (maxInstallment <= 0) return 0;
+  const factor = (1 + MARGIN_RATE * (months / 12)) / months;
+  return Math.floor(maxInstallment / factor / 1000) * 1000;
+}
+
+// البيانات الوهمية التي تُملأ من المصرفية المفتوحة
+const OB_DATA = { salary: 18500, oblig: 1800, statement: "12 شهراً · تدفقات منتظمة" };
+
+type ObStatus = "idle" | "loading" | "done";
+
+export default function FinanceAr() {
+  const [showCalc, setShowCalc] = useState(false);
+  const [obStatus, setObStatus] = useState<ObStatus>("idle");
+  const [verified, setVerified] = useState({ salary: false, statement: false, oblig: false });
+
+  const [amount, setAmount] = useState(100000);
+  const [months, setMonths] = useState(36);
+  const [salary, setSalary] = useState(12000);
+  const [oblig, setOblig] = useState(2000);
+
+  const installment = useMemo(() => calcInstallment(amount, months), [amount, months]);
+  const dbr = useMemo(() => (oblig + installment) / salary, [oblig, installment, salary]);
+  const dbrPct = Math.round(dbr * 100);
+  const isOver = dbr > 0.45;
+  const suggestedAmount = useMemo(() => maxAllowedAmount(salary, oblig, 36), [salary, oblig]);
+
+  function handleOpenBanking() {
+    if (obStatus !== "idle") return;
+    setObStatus("loading");
+
+    // الخطوة 1: بعد 1.5 ثانية تظهر الراتب
+    setTimeout(() => {
+      setSalary(OB_DATA.salary);
+      setVerified(v => ({ ...v, salary: true }));
+    }, 1500);
+
+    // الخطوة 2: بعد 2.5 ثانية يظهر كشف الحساب
+    setTimeout(() => {
+      setVerified(v => ({ ...v, statement: true }));
+    }, 2500);
+
+    // الخطوة 3: بعد 3.5 ثانية تظهر الالتزامات
+    setTimeout(() => {
+      setOblig(OB_DATA.oblig);
+      setVerified(v => ({ ...v, oblig: true }));
+      setObStatus("done");
+      setShowCalc(true); // افتح الحاسبة تلقائياً
+    }, 3500);
+  }
+
+  const inputClass = "w-full bg-muted border border-border rounded-xl px-3 py-2.5 text-foreground text-sm font-medium focus:outline-none focus:border-accent";
+
+  return (
+    <MobileContainer className="bg-background p-4 text-right text-foreground" hasGlow={false}>
+      <div dir="rtl" className="flex-1 flex flex-col h-full w-full">
+        <header className="flex items-center justify-start mt-4 mb-4">
+          <ChevronRight className="w-6 h-6 text-foreground cursor-pointer" />
+        </header>
+
+        <h1 className="text-foreground font-bold text-3xl mb-6">تمويلاتي</h1>
+
+        {/* ===== زر المصرفية المفتوحة ===== */}
+        <button
+          onClick={handleOpenBanking}
+          disabled={obStatus === "loading"}
+          className={`w-full mb-6 rounded-2xl p-4 flex items-center justify-between transition-all border-2 ${
+            obStatus === "done"
+              ? "bg-green-500/10 border-green-500/50"
+              : "bg-gradient-to-l from-accent/20 to-accent/5 border-accent/60 active:scale-[0.98]"
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            {obStatus === "loading" ? (
+              <Loader2 className="w-6 h-6 text-accent animate-spin" />
+            ) : obStatus === "done" ? (
+              <CheckCircle2 className="w-6 h-6 text-green-500" />
+            ) : (
+              <Zap className="w-6 h-6 text-accent fill-accent" />
+            )}
+            <div className="text-right">
+              <p className={`text-sm font-black ${obStatus === "done" ? "text-green-600 dark:text-green-400" : "text-foreground"}`}>
+                {obStatus === "done" ? "تم الربط بنجاح" : "ربط سريع عبر المصرفية المفتوحة"}
+              </p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">
+                {obStatus === "loading" ? "جارٍ جلب بياناتك..." :
+                 obStatus === "done" ? "بياناتك محدّثة تلقائياً" :
+                 "جلب الراتب والالتزامات تلقائياً · بدون إدخال يدوي"}
+              </p>
+            </div>
+          </div>
+          {obStatus === "idle" && (
+            <span className="text-[10px] font-bold text-accent border border-accent/40 px-2 py-1 rounded-full">اربط الآن</span>
+          )}
+        </button>
+
+        {/* بطاقات التحقق — تظهر عند بدء الربط */}
+        {obStatus !== "idle" && (
+          <div className="grid grid-cols-3 gap-2 mb-6">
+            {[
+              { key: "salary" as const, icon: <Wallet className="w-4 h-4" />, label: "الراتب", value: `${OB_DATA.salary.toLocaleString()} ر.س` },
+              { key: "statement" as const, icon: <FileText className="w-4 h-4" />, label: "كشف الحساب", value: OB_DATA.statement },
+              { key: "oblig" as const, icon: <Building2 className="w-4 h-4" />, label: "الالتزامات", value: `${OB_DATA.oblig.toLocaleString()} ر.س` },
+            ].map(({ key, icon, label, value }) => (
+              <div
+                key={key}
+                className={`rounded-xl p-3 border text-center transition-all duration-500 ${
+                  verified[key]
+                    ? "bg-green-500/10 border-green-500/40"
+                    : "bg-muted border-border opacity-50"
+                }`}
+              >
+                <div className="flex justify-center mb-1">
+                  {verified[key]
+                    ? <CheckCircle2 className="w-4 h-4 text-green-500" />
+                    : <div className="text-muted-foreground">{icon}</div>
+                  }
+                </div>
+                <p className="text-[9px] text-muted-foreground font-medium">{label}</p>
+                <p className={`text-[10px] font-black mt-0.5 ${verified[key] ? "text-foreground" : "text-muted-foreground"}`}>
+                  {verified[key] ? value : "—"}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Quick Actions */}
+        <div className="flex justify-between gap-3 mb-8">
+          <button onClick={() => setShowCalc(v => !v)} className="flex flex-col items-center gap-2 flex-1">
+            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border transition-colors ${showCalc ? "bg-accent text-accent-foreground border-accent" : "bg-card text-foreground border-border"}`}>
+              <Calculator className="w-6 h-6" />
+            </div>
+            <span className="text-[11px] font-medium text-center text-foreground">حاسبة التمويل</span>
+          </button>
+          <div className="flex flex-col items-center gap-2 flex-1">
+            <div className="w-14 h-14 bg-card rounded-2xl flex items-center justify-center text-foreground border border-border">
+              <FileSearch className="w-6 h-6" />
+            </div>
+            <span className="text-[11px] font-medium text-center text-foreground">متابعة الطلبات</span>
+          </div>
+          <div className="flex flex-col items-center gap-2 flex-1">
+            <div className="w-14 h-14 bg-card rounded-2xl flex items-center justify-center text-foreground border border-border">
+              <Plus className="w-6 h-6" />
+            </div>
+            <span className="text-[11px] font-medium text-center text-foreground">تمويل جديد</span>
+          </div>
+        </div>
+
+        {/* ===== حاسبة التمويل الذكية ===== */}
+        {showCalc && (
+          <div className="bg-card rounded-3xl p-5 mb-8 border border-border space-y-5">
+            <h2 className="font-bold text-lg text-foreground">حاسبة التمويل الذكية</h2>
+
+            {/* مبلغ التمويل */}
+            <div>
+              <div className="flex justify-between items-center mb-3">
+                <span className="text-xs text-muted-foreground font-bold">مبلغ التمويل</span>
+                <span className="text-base font-black text-accent">{amount.toLocaleString()} ر.س</span>
+              </div>
+              <Slider min={10000} max={500000} step={5000} value={[amount]} onValueChange={([v]) => setAmount(v)} />
+              <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
+                <span>500,000</span><span>10,000</span>
+              </div>
+            </div>
+
+            {/* مدة السداد */}
+            <div>
+              <div className="flex justify-between items-center mb-3">
+                <span className="text-xs text-muted-foreground font-bold">مدة السداد</span>
+                <span className="text-base font-black text-accent">{months} شهراً</span>
+              </div>
+              <Slider min={12} max={60} step={12} value={[months]} onValueChange={([v]) => setMonths(v)} />
+              <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
+                <span>60 شهراً</span><span>12 شهراً</span>
+              </div>
+            </div>
+
+            {/* الراتب والالتزامات */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <div className="flex items-center gap-1 mb-1.5">
+                  <label className="text-xs text-muted-foreground font-bold">الراتب الشهري</label>
+                  {verified.salary && <CheckCircle2 className="w-3 h-3 text-green-500" />}
+                </div>
+                <input type="number" value={salary} onChange={e => setSalary(Math.max(1, +e.target.value))} className={inputClass} />
+              </div>
+              <div>
+                <div className="flex items-center gap-1 mb-1.5">
+                  <label className="text-xs text-muted-foreground font-bold">الالتزامات</label>
+                  {verified.oblig && <CheckCircle2 className="w-3 h-3 text-green-500" />}
+                </div>
+                <input type="number" value={oblig} onChange={e => setOblig(Math.max(0, +e.target.value))} className={inputClass} />
+              </div>
+            </div>
+
+            {/* نتائج لحظية */}
+            <div className="bg-muted rounded-2xl p-4 flex justify-between items-center">
+              <div className="text-center flex-1">
+                <p className="text-[10px] text-muted-foreground mb-1">القسط الشهري</p>
+                <p className="text-lg font-black text-foreground">{Math.round(installment).toLocaleString()}</p>
+                <p className="text-[10px] text-muted-foreground">ر.س</p>
+              </div>
+              <div className="w-px h-10 bg-border" />
+              <div className="text-center flex-1">
+                <p className="text-[10px] text-muted-foreground mb-1">نسبة عبء الدين</p>
+                <p className={`text-lg font-black ${isOver ? "text-red-500" : dbrPct > 33 ? "text-amber-500" : "text-green-500"}`}>{dbrPct}%</p>
+                <p className="text-[10px] text-muted-foreground">الحد 45%</p>
+              </div>
+              <div className="w-px h-10 bg-border" />
+              <div className="text-center flex-1">
+                <p className="text-[10px] text-muted-foreground mb-1">إجمالي التمويل</p>
+                <p className="text-lg font-black text-foreground">{Math.round(amount * (1 + MARGIN_RATE * (months / 12)) / 1000)}k</p>
+                <p className="text-[10px] text-muted-foreground">ر.س</p>
+              </div>
+            </div>
+
+            {/* شريط DBR */}
+            <div>
+              <div className="h-2 bg-muted rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${isOver ? "bg-red-500" : dbrPct > 33 ? "bg-amber-500" : "bg-green-500"}`}
+                  style={{ width: `${Math.min(dbrPct / 45 * 100, 100)}%` }}
+                />
+              </div>
+              <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
+                <span>0%</span>
+                <span className="text-red-500 font-bold">حد ساما 45%</span>
+              </div>
+            </div>
+
+            {/* بطاقة التوصية */}
+            {isOver && (
+              <div className="bg-red-500/10 border border-red-500/40 rounded-2xl p-4 flex gap-3">
+                <AlertTriangle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-bold text-red-500 mb-1">تجاوز حد عبء الدين</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    وفق حد عبء الدين 45% من ساما، طلبك يتجاوز الحد.{" "}
+                    {suggestedAmount > 0 ? (
+                      <>ننصح بتعديل المبلغ إلى <span className="font-black text-foreground">{suggestedAmount.toLocaleString()} ر.س</span> على <span className="font-black text-foreground">36 شهراً</span>.</>
+                    ) : (
+                      "الالتزامات الحالية تستنفد الحد المسموح — يُنصح بتسوية بعض الالتزامات أولاً."
+                    )}
+                  </p>
+                  {suggestedAmount > 0 && (
+                    <button onClick={() => { setAmount(suggestedAmount); setMonths(36); }} className="mt-3 flex items-center gap-1.5 text-xs font-bold text-accent">
+                      <TrendingDown className="w-3.5 h-3.5" />
+                      تطبيق المبلغ المقترح
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Banner */}
+        <div className="mb-8">
+          <div className="h-32 bg-card rounded-2xl flex items-end justify-center overflow-hidden relative border border-border">
+            <div className="absolute inset-0 flex items-end justify-center opacity-30">
+               <svg viewBox="0 0 200 100" className="w-full h-full text-foreground" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                 <path d="M20 100 V40 H40 V100 M40 60 H70 V100 M70 20 H100 V100 M100 50 H130 V100 M130 30 H160 V100 M160 70 H180 V100" />
+                 <circle cx="85" cy="40" r="3" fill="currentColor" />
+                 <circle cx="115" cy="60" r="3" fill="currentColor" />
+               </svg>
+            </div>
+            <div className="absolute bottom-4 left-6 w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
+              <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div className="mb-6">
+          <h2 className="font-bold text-xl text-foreground mb-2">اكتشف خيارات التمويل</h2>
+          <p className="text-sm text-muted-foreground leading-relaxed">هناك العديد من المنتجات المالية التي يمكنك استكشافها والاختيار من بينها.</p>
+        </div>
+
+        <div className="space-y-4">
+          {[
+            { icon: <UserSquare className="w-6 h-6" />, title: "تمويل شخصي", desc: "خيارات متعددة لتناسب احتياجاتك." },
+            { icon: <HomeIcon className="w-6 h-6" />, title: "التمويل العقاري", desc: "نساعدك بتحقيق حلمك من خلال التمويل العقاري." },
+            { icon: <Car className="w-6 h-6" />, title: "التمويل التأجيري للسيارات", desc: "احصل على سيارة أحلامك من خلال الإنماء بسهولة." },
+            { icon: <GraduationCap className="w-6 h-6" />, title: "تمويل التعليم", desc: "استثمر في مستقبلك وموّل رسومك الدراسية بأقساط ميسّرة ومتوافقة مع الشريعة." },
+          ].map(({ icon, title, desc }) => (
+            <div key={title} className="bg-card rounded-2xl p-5 flex items-center justify-between border border-border">
+              <div className="flex-1 mr-4">
+                <h3 className="font-bold text-foreground mb-1 text-base">{title}</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">{desc}</p>
+              </div>
+              <div className="w-12 h-12 bg-muted rounded-xl flex items-center justify-center text-foreground">{icon}</div>
+            </div>
+          ))}
+
+          <Link href="/crowd-finance">
+            <div className="bg-card rounded-2xl p-5 flex items-center justify-between cursor-pointer border border-border">
+              <div className="flex-1 mr-4">
+                <h3 className="font-bold text-foreground mb-1 text-base">تمويل جماعي</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">حقق أهدافك المالية بالتعاون مع الآخرين.</p>
+              </div>
+              <div className="w-12 h-12 bg-muted rounded-xl flex items-center justify-center text-foreground"><Users className="w-6 h-6" /></div>
+            </div>
+          </Link>
+        </div>
+
+        {/* نص الثقة والامتثال */}
+        <p className="text-center text-[10px] text-muted-foreground leading-relaxed mt-8 mb-4 px-2">
+          🔒 تُدار أموالك بأمان عبر مصرف الإنماء بالتوافق مع أنظمة البنك المركزي السعودي (ساما) ومبادئ التمويل الإسلامي.
+        </p>
+      </div>
+    </MobileContainer>
+  );
+}
