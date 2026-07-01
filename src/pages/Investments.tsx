@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { MobileContainer } from "@/components/MobileContainer";
-import { ChevronRight, TrendingUp, Briefcase, Sprout, FileSignature, HandCoins, Clock, Car, Store, User, Wrench, Wallet } from "lucide-react";
+import { ChevronRight, TrendingUp, Briefcase, Sprout, FileSignature, HandCoins, Clock, Car, Store, User, Wrench, Sparkles, Loader2, PieChart } from "lucide-react";
 import { Link } from "wouter";
+import { useToast } from "@/hooks/use-toast";
 
 type Tab = "portfolios" | "namaa" | "ipos" | "funding";
 
@@ -37,11 +38,58 @@ const LC = {
   high: { text: "text-red-600 dark:text-red-400",     bar: "bg-red-500",   badge: "bg-red-500/15 text-red-700 dark:text-red-400",       dot: "bg-red-500",   label: "مرتفع" },
 };
 
+// توزيع ذكي: أوزان المخاطر — منخفض 50%، متوسط 35%، مرتفع 15%
+const RISK_WEIGHT = { low: 0.50, mid: 0.35, high: 0.15 };
+
+interface Alloc { opp: Opp; amount: number; sharePct: number }
+
+function smartAllocate(total: number, opps: Opp[]): Alloc[] {
+  const perLevelCount = { low: 0, mid: 0, high: 0 };
+  opps.forEach(o => perLevelCount[o.level]++);
+  const weighted = opps.map(o => ({ opp: o, w: RISK_WEIGHT[o.level] / perLevelCount[o.level] }));
+  const sumW = weighted.reduce((s, x) => s + x.w, 0);
+  return weighted.map(({ opp, w }) => {
+    const amount = Math.max(1000, Math.round((w / sumW) * total / 1000) * 1000);
+    const sharePct = Math.round((amount / total) * 100);
+    return { opp, amount, sharePct };
+  });
+}
+
 export default function Investments() {
   const [tab, setTab] = useState<Tab>("funding");
+  const { toast } = useToast();
+
+  // الاستثمار الذكي (توزيع المخاطر)
+  const [investAmt, setInvestAmt] = useState("10000");
+  const [allocating, setAllocating] = useState(false);
+  const [allocations, setAllocations] = useState<Alloc[] | null>(null);
 
   const totalInvested = MY_CONTRIBUTIONS.reduce((s, c) => s + c.amount, 0);
   const avgRet = (MY_CONTRIBUTIONS.reduce((s, c) => s + c.retPct * c.amount, 0) / totalInvested).toFixed(1);
+
+  const allocAvgRet = allocations
+    ? (allocations.reduce((s, a) => s + a.opp.retPct * a.sharePct, 0) / 100).toFixed(1)
+    : null;
+
+  function handleSmartInvest() {
+    const total = Math.max(5000, Math.round(+investAmt / 1000) * 1000);
+    setAllocating(true);
+    setAllocations(null);
+    setTimeout(() => {
+      setAllocations(smartAllocate(total, OPPS));
+      setAllocating(false);
+    }, 1800);
+  }
+
+  function confirmSmartInvest() {
+    const total = allocations!.reduce((s, a) => s + a.amount, 0);
+    toast({
+      title: "✅ تم توزيع استثمارك بنجاح",
+      description: `وُزِّع ${total.toLocaleString()} ر.س على ${allocations!.length} فرص بعائد متوقّع ${allocAvgRet}%`,
+    });
+    setAllocations(null);
+    setInvestAmt("10000");
+  }
 
   return (
     <MobileContainer className="bg-background text-right text-foreground" hasGlow={false}>
@@ -131,6 +179,74 @@ export default function Investments() {
                   </div>
                 ))}
               </div>
+
+              {/* ===== الاستثمار الذكي التلقائي (توزيع المخاطر) ===== */}
+              <div className="bg-gradient-to-l from-accent/20 to-primary/10 border-2 border-accent/40 rounded-2xl p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles className="w-5 h-5 text-accent" />
+                  <h3 className="font-black text-foreground text-sm">الاستثمار الذكي التلقائي</h3>
+                  <span className="text-[10px] bg-accent/20 text-accent font-bold px-2 py-0.5 rounded-full">توزيع المخاطر</span>
+                </div>
+                <p className="text-xs text-muted-foreground mb-3 leading-relaxed">أدخل مبلغاً إجمالياً وسيوزّعه النظام تلقائياً على عدة فرص لتقليل المخاطرة وزيادة العائد.</p>
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    value={investAmt}
+                    onChange={e => setInvestAmt(e.target.value)}
+                    placeholder="المبلغ الإجمالي (ريال)"
+                    className="flex-1 bg-background border border-border rounded-xl px-3 py-2.5 text-foreground text-sm font-medium focus:outline-none focus:border-accent"
+                  />
+                  <button
+                    onClick={handleSmartInvest}
+                    disabled={allocating}
+                    className="bg-accent text-accent-foreground font-bold text-sm px-4 py-2.5 rounded-xl active:scale-95 transition-transform flex items-center gap-1.5 whitespace-nowrap"
+                  >
+                    {allocating ? <Loader2 className="w-4 h-4 animate-spin" /> : <TrendingUp className="w-4 h-4" />}
+                    {allocating ? "يحسب..." : "وزّع الآن"}
+                  </button>
+                </div>
+              </div>
+
+              {/* ملخّص التوزيع */}
+              {allocations && (
+                <div className="bg-card border border-border rounded-2xl p-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-500">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <PieChart className="w-4 h-4 text-accent" />
+                      <span className="font-black text-sm text-foreground">ملخّص التوزيع</span>
+                    </div>
+                    <div className="text-left">
+                      <span className="text-[10px] text-muted-foreground">العائد الإجمالي المتوقّع </span>
+                      <span className="text-accent font-black text-sm">{allocAvgRet}%</span>
+                    </div>
+                  </div>
+
+                  {/* شريط التوزيع البصري */}
+                  <div className="flex h-2.5 rounded-full overflow-hidden gap-px">
+                    {allocations.map(a => (
+                      <div key={a.opp.id} className={`${LC[a.opp.level].bar} transition-all duration-700`} style={{ width: `${a.sharePct}%` }} />
+                    ))}
+                  </div>
+
+                  {allocations.map(a => (
+                    <div key={a.opp.id} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className={`w-2 h-2 rounded-full ${LC[a.opp.level].dot}`} />
+                        <span className="text-xs text-foreground font-medium">{a.opp.title}</span>
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${LC[a.opp.level].badge}`}>{a.sharePct}%</span>
+                      </div>
+                      <div className="text-left">
+                        <span className="text-sm font-black text-foreground">{a.amount.toLocaleString()}</span>
+                        <span className="text-[10px] text-muted-foreground"> ر.س · {a.opp.retPct}%</span>
+                      </div>
+                    </div>
+                  ))}
+
+                  <button onClick={confirmSmartInvest} className="w-full bg-accent text-accent-foreground font-bold text-sm py-3 rounded-xl active:scale-95 transition-transform mt-1">
+                    تأكيد الاستثمار الذكي
+                  </button>
+                </div>
+              )}
 
               {/* فرص التمويل للمساهمة */}
               <div>
