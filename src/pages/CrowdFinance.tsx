@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { MobileContainer } from "@/components/MobileContainer";
-import { ChevronRight, CheckCircle2, AlertTriangle, XCircle, Sparkles, TrendingUp, Loader2, PieChart } from "lucide-react";
+import { ChevronRight, CheckCircle2, AlertTriangle, XCircle } from "lucide-react";
 import { Link } from "wouter";
-import { useToast } from "@/hooks/use-toast";
 
-type Tab = "apply" | "invest" | "how";
+type Tab = "apply" | "how";
 type RiskLevel = "low" | "mid" | "high" | null;
 
 interface AssessResult {
@@ -15,43 +14,6 @@ interface AssessResult {
   dbr: number;
   decision: string;
   factors: { name: string; val: number; max: number }[];
-}
-
-interface Opp {
-  id: number;
-  title: string;
-  level: "low" | "mid" | "high";
-  levelText: string;
-  goal: number;
-  raised: number;
-  retPct: number;   // العائد المتوقع %
-  months: number;
-}
-
-const INITIAL_OPPS: Opp[] = [
-  { id: 1, title: "تمويل سيارة",          level: "low",  levelText: "منخفض",   goal: 80000, raised: 62000, retPct: 6.5, months: 36 },
-  { id: 2, title: "معدّات ورشة",           level: "low",  levelText: "منخفض",   goal: 45000, raised: 31000, retPct: 7.0, months: 24 },
-  { id: 3, title: "أجهزة إلكترونية",      level: "mid",  levelText: "متوسط",   goal: 20000, raised:  8000, retPct: 7.5, months: 18 },
-  { id: 4, title: "توسعة مطعم",           level: "mid",  levelText: "متوسط",   goal: 60000, raised: 22000, retPct: 8.2, months: 30 },
-  { id: 5, title: "مشروع تقني ناشئ",      level: "high", levelText: "مرتفع",   goal: 35000, raised:  5000, retPct: 11.0, months: 24 },
-];
-
-/* توزيع ذكي: أوزان المخاطر — منخفض 50%، متوسط 35%، مرتفع 15% */
-const RISK_WEIGHT = { low: 0.50, mid: 0.35, high: 0.15 };
-
-interface Alloc { opp: Opp; amount: number; sharePct: number }
-
-function smartAllocate(total: number, opps: Opp[]): Alloc[] {
-  // جمع الأوزان المتاحة
-  const weighted = opps.map(o => ({ opp: o, w: RISK_WEIGHT[o.level] / opps.filter(x => x.level === o.level).length }));
-  const sumW = weighted.reduce((s, x) => s + x.w, 0);
-
-  return weighted.map(({ opp, w }) => {
-    const raw = (w / sumW) * total;
-    const amount = Math.max(1000, Math.round(raw / 1000) * 1000);
-    const sharePct = Math.round((amount / total) * 100);
-    return { opp, amount, sharePct };
-  });
 }
 
 function assess(amount: number, term: number, salary: number, oblig: number, credit: number, tenure: number, emp: string): AssessResult {
@@ -84,7 +46,6 @@ function assess(amount: number, term: number, salary: number, oblig: number, cre
 
 export default function CrowdFinance() {
   const [tab, setTab] = useState<Tab>("apply");
-  const [opps, setOpps] = useState<Opp[]>(INITIAL_OPPS);
   const [result, setResult] = useState<AssessResult | null>(null);
 
   // نموذج الطلب
@@ -97,27 +58,7 @@ export default function CrowdFinance() {
   const [item, setItem]     = useState("سيارة");
   const [emp, setEmp]       = useState("حكومي");
 
-  // الاستثمار الذكي
-  const [investAmt, setInvestAmt] = useState("10000");
-  const [allocating, setAllocating] = useState(false);
-  const [allocations, setAllocations] = useState<Alloc[] | null>(null);
-  const { toast } = useToast();
-
   function handleAssess() { setResult(assess(+amount, +term, +salary, +oblig, +credit, +tenure, emp)); }
-
-  function contribute(id: number) {
-    setOpps(prev => prev.map(o => o.id === id ? { ...o, raised: Math.min(o.goal, o.raised + 1000) } : o));
-  }
-
-  function handleSmartInvest() {
-    const total = Math.max(5000, Math.round(+investAmt / 1000) * 1000);
-    setAllocating(true);
-    setAllocations(null);
-    setTimeout(() => {
-      setAllocations(smartAllocate(total, opps));
-      setAllocating(false);
-    }, 1800);
-  }
 
   const LC = {
     low:  { bg: "bg-green-500/10", border: "border-green-500/50", text: "text-green-600 dark:text-green-400", bar: "bg-green-500", badge: "bg-green-500/15 text-green-700 dark:text-green-400", dot: "bg-green-500" },
@@ -126,10 +67,6 @@ export default function CrowdFinance() {
   };
 
   const inputClass = "w-full bg-muted border border-border rounded-xl px-4 py-3 text-foreground text-sm font-medium focus:outline-none focus:border-accent";
-
-  const avgRet = allocations
-    ? (allocations.reduce((s, a) => s + a.opp.retPct * a.sharePct, 0) / 100).toFixed(1)
-    : null;
 
   return (
     <MobileContainer className="bg-background text-right text-foreground" hasGlow={false}>
@@ -235,145 +172,7 @@ export default function CrowdFinance() {
             </div>
           )}
 
-          {/* ===== Tab 2: Invest (نُقل للمموّل في شاشة الاستثمار) ===== */}
-          {false && (
-            <div className="space-y-4">
-
-              {/* زر الاستثمار الذكي التلقائي */}
-              <div className="bg-gradient-to-l from-accent/15 to-primary/10 border border-accent/40 rounded-2xl p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <Sparkles className="w-5 h-5 text-accent" />
-                  <h3 className="font-black text-foreground text-sm">الاستثمار الذكي التلقائي</h3>
-                  <span className="text-[10px] bg-accent/20 text-accent font-bold px-2 py-0.5 rounded-full">توزيع المخاطر</span>
-                </div>
-                <p className="text-xs text-muted-foreground mb-3 leading-relaxed">أدخل المبلغ وسيوزّعه النظام تلقائياً على الفرص لتقليل المخاطر وزيادة العائد.</p>
-                <div className="flex gap-2">
-                  <input
-                    type="number"
-                    value={investAmt}
-                    onChange={e => setInvestAmt(e.target.value)}
-                    placeholder="المبلغ (ريال)"
-                    className="flex-1 bg-background border border-border rounded-xl px-3 py-2.5 text-foreground text-sm font-medium focus:outline-none focus:border-accent"
-                  />
-                  <button
-                    onClick={handleSmartInvest}
-                    disabled={allocating}
-                    className="bg-accent text-accent-foreground font-bold text-sm px-4 py-2.5 rounded-xl active:scale-95 transition-transform flex items-center gap-1.5 whitespace-nowrap"
-                  >
-                    {allocating ? <Loader2 className="w-4 h-4 animate-spin" /> : <TrendingUp className="w-4 h-4" />}
-                    {allocating ? "يحسب..." : "وزّع الآن"}
-                  </button>
-                </div>
-              </div>
-
-              {/* ملخص التوزيع */}
-              {allocations && (
-                <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <PieChart className="w-4 h-4 text-accent" />
-                      <span className="font-black text-sm text-foreground">ملخّص التوزيع</span>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-[10px] text-muted-foreground">متوسط العائد المتوقع </span>
-                      <span className="text-accent font-black text-sm">{avgRet}%</span>
-                    </div>
-                  </div>
-
-                  {/* شريط التوزيع البصري */}
-                  <div className="flex h-2.5 rounded-full overflow-hidden gap-px">
-                    {allocations.map(a => (
-                      <div key={a.opp.id} className={`${LC[a.opp.level].bar} transition-all`} style={{ width: `${a.sharePct}%` }} />
-                    ))}
-                  </div>
-
-                  {allocations.map(a => (
-                    <div key={a.opp.id} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${LC[a.opp.level].dot}`} />
-                        <span className="text-xs text-foreground font-medium">{a.opp.title}</span>
-                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${LC[a.opp.level].badge}`}>{a.opp.levelText}</span>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-sm font-black text-foreground">{a.amount.toLocaleString()}</span>
-                        <span className="text-[10px] text-muted-foreground"> ر.س · {a.opp.retPct}%</span>
-                      </div>
-                    </div>
-                  ))}
-
-                  <button
-                    onClick={() => {
-                      setOpps(prev => prev.map(o => {
-                        const alloc = allocations!.find(a => a.opp.id === o.id);
-                        if (!alloc) return o;
-                        return { ...o, raised: Math.min(o.goal, o.raised + alloc.amount) };
-                      }));
-                      const total = allocations!.reduce((s, a) => s + a.amount, 0);
-                      setAllocations(null);
-                      setInvestAmt("10000");
-                      toast({
-                        title: "✅ تم الاستثمار بنجاح",
-                        description: `وُزِّع ${total.toLocaleString()} ر.س على ${allocations!.length} فرص استثمارية بعائد متوقع ${avgRet}%`,
-                      });
-                    }}
-                    className="w-full bg-accent text-accent-foreground font-bold text-sm py-3 rounded-xl active:scale-95 transition-transform mt-1"
-                  >
-                    تأكيد الاستثمار الذكي
-                  </button>
-                </div>
-              )}
-
-              {/* قائمة الفرص */}
-              <div>
-                <h2 className="text-base font-black text-foreground mb-1">فرص تمويل مقبولة</h2>
-                <p className="text-muted-foreground text-xs leading-relaxed mb-3">اجتازت تقييم المخاطر · عائد حلال من ربح المرابحة</p>
-              </div>
-
-              {opps.map(opp => {
-                const pct = Math.round((opp.raised / opp.goal) * 100);
-                const remaining = opp.goal - opp.raised;
-                return (
-                  <div key={opp.id} className={`rounded-2xl p-5 border ${LC[opp.level].bg} ${LC[opp.level].border}`}>
-                    {/* العنوان + الشارة */}
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <h3 className="font-black text-base text-foreground">{opp.title}</h3>
-                        <p className="text-xs text-muted-foreground mt-0.5">على {opp.months} شهراً · متبقي {remaining.toLocaleString()} ر.س</p>
-                      </div>
-                      <div className="flex flex-col items-end gap-1">
-                        {/* مستوى المخاطر بمؤشر لوني */}
-                        <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 ${LC[opp.level].badge}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${LC[opp.level].dot}`}/>
-                          خطر {opp.levelText}
-                        </span>
-                        {/* العائد المتوقع */}
-                        <span className="text-sm font-black text-amber-500 flex items-center gap-1">
-                          <TrendingUp className="w-3.5 h-3.5" />
-                          {opp.retPct}%
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* شريط الاكتمال */}
-                    <div className="h-2 bg-muted rounded-full overflow-hidden mb-1.5">
-                      <div className={`h-full rounded-full transition-all duration-700 ${LC[opp.level].bar}`} style={{ width: `${pct}%` }}/>
-                    </div>
-                    <div className="flex justify-between text-xs mb-4">
-                      <span className={`font-bold ${LC[opp.level].text}`}>{pct}% مكتمل</span>
-                      <span className="text-muted-foreground">{opp.goal.toLocaleString()} ر.س</span>
-                    </div>
-
-                    <button onClick={() => contribute(opp.id)}
-                      className="w-full bg-background hover:bg-muted text-foreground font-bold text-sm py-3 rounded-xl border border-border active:scale-95 transition-all">
-                      ساهم بـ 1,000 ريال
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* ===== Tab 3: How ===== */}
+          {/* ===== Tab 2: How ===== */}
           {tab === "how" && (
             <div className="space-y-4">
               <div>

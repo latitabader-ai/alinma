@@ -28,10 +28,12 @@ const OPPS: Opp[] = [
 ];
 
 // مساهمات المموِّل الحالية
-const MY_CONTRIBUTIONS = [
-  { title: "تمويل سيارة",        amount: 5000, retPct: 6.5, level: "low"  as const, status: "نشطة" },
-  { title: "معدّات ورشة",        amount: 3000, retPct: 7.0, level: "low"  as const, status: "نشطة" },
-  { title: "أجهزة إلكترونية",   amount: 2000, retPct: 7.5, level: "mid"  as const, status: "نشطة" },
+interface Contribution { title: string; amount: number; retPct: number; level: "low" | "mid" | "high"; status: string }
+
+const INITIAL_CONTRIBUTIONS: Contribution[] = [
+  { title: "تمويل سيارة",        amount: 5000, retPct: 6.5, level: "low",  status: "نشطة" },
+  { title: "معدّات ورشة",        amount: 3000, retPct: 7.0, level: "low",  status: "نشطة" },
+  { title: "أجهزة إلكترونية",   amount: 2000, retPct: 7.5, level: "mid",  status: "نشطة" },
 ];
 
 const LC = {
@@ -61,6 +63,9 @@ export default function Investments() {
   const [tab, setTab] = useState<Tab>("funding");
   const { toast } = useToast();
 
+  // مساهماتي الحالية (تتحدّث عند كل مساهمة)
+  const [myContribs, setMyContribs] = useState<Contribution[]>(INITIAL_CONTRIBUTIONS);
+
   // الاستثمار الذكي (توزيع المخاطر)
   const [investAmt, setInvestAmt] = useState("10000");
   const [allocating, setAllocating] = useState(false);
@@ -70,6 +75,17 @@ export default function Investments() {
   const [activeOpp, setActiveOpp] = useState<Opp | null>(null);
   const [contribAmt, setContribAmt] = useState(5000);
 
+  // دمج مساهمة جديدة مع القائمة (إن وُجدت الفرصة نزيد مبلغها)
+  function addContribution(prev: Contribution[], c: Contribution): Contribution[] {
+    const idx = prev.findIndex(x => x.title === c.title);
+    if (idx >= 0) {
+      const next = [...prev];
+      next[idx] = { ...next[idx], amount: next[idx].amount + c.amount };
+      return next;
+    }
+    return [{ ...c, status: "نشطة" }, ...prev];
+  }
+
   function openContribute(opp: Opp) {
     setActiveOpp(opp);
     setContribAmt(Math.min(5000, opp.goal - opp.raised));
@@ -78,6 +94,9 @@ export default function Investments() {
   function confirmContribute() {
     if (!activeOpp) return;
     const annualReturn = Math.round(contribAmt * activeOpp.retPct / 100);
+    setMyContribs(prev => addContribution(prev, {
+      title: activeOpp.title, amount: contribAmt, retPct: activeOpp.retPct, level: activeOpp.level, status: "نشطة",
+    }));
     toast({
       title: "✅ تمت المساهمة بنجاح",
       description: `ساهمت بـ ${contribAmt.toLocaleString()} ر.س في ${activeOpp.title} · عائد سنوي متوقّع ${annualReturn.toLocaleString()} ر.س`,
@@ -85,8 +104,8 @@ export default function Investments() {
     setActiveOpp(null);
   }
 
-  const totalInvested = MY_CONTRIBUTIONS.reduce((s, c) => s + c.amount, 0);
-  const avgRet = (MY_CONTRIBUTIONS.reduce((s, c) => s + c.retPct * c.amount, 0) / totalInvested).toFixed(1);
+  const totalInvested = myContribs.reduce((s, c) => s + c.amount, 0);
+  const avgRet = totalInvested ? (myContribs.reduce((s, c) => s + c.retPct * c.amount, 0) / totalInvested).toFixed(1) : "0";
 
   const allocAvgRet = allocations
     ? (allocations.reduce((s, a) => s + a.opp.retPct * a.sharePct, 0) / 100).toFixed(1)
@@ -104,6 +123,10 @@ export default function Investments() {
 
   function confirmSmartInvest() {
     const total = allocations!.reduce((s, a) => s + a.amount, 0);
+    // أضف كل جزء من التوزيع إلى مساهماتي
+    setMyContribs(prev => allocations!.reduce((acc, a) => addContribution(acc, {
+      title: a.opp.title, amount: a.amount, retPct: a.opp.retPct, level: a.opp.level, status: "نشطة",
+    }), prev));
     toast({
       title: "✅ تم توزيع استثمارك بنجاح",
       description: `وُزِّع ${total.toLocaleString()} ر.س على ${allocations!.length} فرص بعائد متوقّع ${allocAvgRet}%`,
@@ -187,7 +210,7 @@ export default function Investments() {
 
               {/* قائمة مساهماتي */}
               <div className="space-y-2">
-                {MY_CONTRIBUTIONS.map((c, i) => (
+                {myContribs.map((c, i) => (
                   <div key={i} className="flex items-center justify-between bg-card rounded-xl px-4 py-3 border border-border">
                     <div className="flex items-center gap-2.5">
                       <span className={`w-2 h-2 rounded-full ${LC[c.level].dot}`} />
