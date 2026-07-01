@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { MobileContainer } from "@/components/MobileContainer";
-import { ChevronRight, TrendingUp, Briefcase, Sprout, FileSignature, HandCoins, Clock, Car, Store, User, Wrench, Sparkles, Loader2, PieChart } from "lucide-react";
+import { ChevronRight, TrendingUp, Briefcase, Sprout, FileSignature, HandCoins, Clock, Car, Store, User, Wrench, Sparkles, Loader2, PieChart, ShieldCheck } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
+import { Slider } from "@/components/ui/slider";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 type Tab = "portfolios" | "namaa" | "ipos" | "funding";
 
@@ -63,6 +65,25 @@ export default function Investments() {
   const [investAmt, setInvestAmt] = useState("10000");
   const [allocating, setAllocating] = useState(false);
   const [allocations, setAllocations] = useState<Alloc[] | null>(null);
+
+  // المساهمة في فرصة محدّدة
+  const [activeOpp, setActiveOpp] = useState<Opp | null>(null);
+  const [contribAmt, setContribAmt] = useState(5000);
+
+  function openContribute(opp: Opp) {
+    setActiveOpp(opp);
+    setContribAmt(Math.min(5000, opp.goal - opp.raised));
+  }
+
+  function confirmContribute() {
+    if (!activeOpp) return;
+    const annualReturn = Math.round(contribAmt * activeOpp.retPct / 100);
+    toast({
+      title: "✅ تمت المساهمة بنجاح",
+      description: `ساهمت بـ ${contribAmt.toLocaleString()} ر.س في ${activeOpp.title} · عائد سنوي متوقّع ${annualReturn.toLocaleString()} ر.س`,
+    });
+    setActiveOpp(null);
+  }
 
   const totalInvested = MY_CONTRIBUTIONS.reduce((s, c) => s + c.amount, 0);
   const avgRet = (MY_CONTRIBUTIONS.reduce((s, c) => s + c.retPct * c.amount, 0) / totalInvested).toFixed(1);
@@ -290,7 +311,7 @@ export default function Investments() {
                       <span className="text-muted-foreground">متبقّي {remaining.toLocaleString()} من {opp.goal.toLocaleString()} ر.س</span>
                     </div>
 
-                    <button className="w-full bg-accent text-accent-foreground font-bold text-sm py-3 rounded-xl active:scale-95 transition-transform">
+                    <button onClick={() => openContribute(opp)} className="w-full bg-accent text-accent-foreground font-bold text-sm py-3 rounded-xl active:scale-95 transition-transform">
                       ساهم في هذه الفرصة
                     </button>
                   </div>
@@ -305,6 +326,78 @@ export default function Investments() {
 
         </div>
       </div>
+
+      {/* ===== نافذة المساهمة في فرصة ===== */}
+      <Dialog open={!!activeOpp} onOpenChange={(o) => !o && setActiveOpp(null)}>
+        <DialogContent className="max-w-[340px] rounded-2xl" dir="rtl">
+          {activeOpp && (() => {
+            const maxContrib = activeOpp.goal - activeOpp.raised;
+            const annualReturn = Math.round(contribAmt * activeOpp.retPct / 100);
+            return (
+              <div className="text-right space-y-4">
+                <DialogHeader>
+                  <DialogTitle className="text-right flex items-center gap-2 text-foreground">
+                    <span className="w-9 h-9 bg-muted rounded-xl flex items-center justify-center text-accent">{activeOpp.icon}</span>
+                    المساهمة في {activeOpp.title}
+                  </DialogTitle>
+                </DialogHeader>
+
+                <div className="flex items-center justify-between">
+                  <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 ${LC[activeOpp.level].badge}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${LC[activeOpp.level].dot}`} />
+                    خطر {LC[activeOpp.level].label}
+                  </span>
+                  <span className="text-sm font-black text-amber-500 flex items-center gap-1">
+                    <TrendingUp className="w-3.5 h-3.5" /> عائد {activeOpp.retPct}%
+                  </span>
+                </div>
+
+                {/* اختيار المبلغ */}
+                <div>
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="text-xs text-muted-foreground font-bold">مبلغ المساهمة</span>
+                    <span className="text-base font-black text-accent">{contribAmt.toLocaleString()} ر.س</span>
+                  </div>
+                  <Slider
+                    min={1000} max={Math.max(1000, maxContrib)} step={500}
+                    value={[contribAmt]}
+                    onValueChange={([v]) => setContribAmt(v)}
+                  />
+                  <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
+                    <span>{Math.max(1000, maxContrib).toLocaleString()}</span>
+                    <span>1,000</span>
+                  </div>
+                </div>
+
+                {/* العائد المتوقّع */}
+                <div className="bg-muted rounded-2xl p-4 flex justify-between items-center">
+                  <div>
+                    <p className="text-[10px] text-muted-foreground mb-0.5">نسبة العائد المتوقّع</p>
+                    <p className="text-lg font-black text-green-600 dark:text-green-400">{activeOpp.retPct}%</p>
+                  </div>
+                  <div className="w-px h-9 bg-border" />
+                  <div className="text-left">
+                    <p className="text-[10px] text-muted-foreground mb-0.5">عائدك السنوي المتوقّع</p>
+                    <p className="text-lg font-black text-foreground">+{annualReturn.toLocaleString()} ر.س</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2 text-[10px] text-muted-foreground leading-relaxed">
+                  <ShieldCheck className="w-3.5 h-3.5 text-green-500 shrink-0 mt-0.5" />
+                  مساهمة متوافقة مع الشريعة (مرابحة) · تُدار عبر مصرف الإنماء وفق أنظمة ساما.
+                </div>
+
+                <button
+                  onClick={confirmContribute}
+                  className="w-full bg-accent text-accent-foreground font-bold text-sm py-3.5 rounded-xl active:scale-95 transition-transform"
+                >
+                  تأكيد المساهمة في هذه الفرصة
+                </button>
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
     </MobileContainer>
   );
 }
