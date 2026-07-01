@@ -3,6 +3,7 @@ import { MobileContainer } from "@/components/MobileContainer";
 import { Plus, FileSearch, Calculator, UserSquare, Home as HomeIcon, Car, Users, GraduationCap, ChevronRight, AlertTriangle, TrendingDown, Zap, CheckCircle2, Loader2, Building2, FileText, Wallet } from "lucide-react";
 import { Link } from "wouter";
 import { Slider } from "@/components/ui/slider";
+import { useAccount } from "@/lib/AccountProvider";
 
 const MARGIN_RATE = 0.065;
 
@@ -18,12 +19,13 @@ function maxAllowedAmount(salary: number, oblig: number, months = 36) {
   return Math.floor(maxInstallment / factor / 1000) * 1000;
 }
 
-// البيانات الوهمية التي تُملأ من المصرفية المفتوحة
-const OB_DATA = { salary: 18500, oblig: 1800, statement: "12 شهراً · تدفقات منتظمة" };
-
 type ObStatus = "idle" | "loading" | "done";
 
 export default function FinanceAr() {
+  // البيانات المتّسقة تُسحب من حالة الحساب المشتركة (لا قيماً عشوائية)
+  const { balance, salary: obSalary, oblig: obOblig, statement: obStatement } = useAccount();
+  const OB_DATA = { salary: obSalary, oblig: obOblig, statement: obStatement };
+
   const [showCalc, setShowCalc] = useState(false);
   const [obStatus, setObStatus] = useState<ObStatus>("idle");
   const [verified, setVerified] = useState({ salary: false, statement: false, oblig: false });
@@ -113,7 +115,7 @@ export default function FinanceAr() {
           <div className="grid grid-cols-3 gap-2 mb-6">
             {[
               { key: "salary" as const, icon: <Wallet className="w-4 h-4" />, label: "الراتب", value: `${OB_DATA.salary.toLocaleString()} ر.س` },
-              { key: "statement" as const, icon: <FileText className="w-4 h-4" />, label: "كشف الحساب", value: OB_DATA.statement },
+              { key: "statement" as const, icon: <FileText className="w-4 h-4" />, label: "الرصيد", value: `${balance.toLocaleString()} ر.س` },
               { key: "oblig" as const, icon: <Building2 className="w-4 h-4" />, label: "الالتزامات", value: `${OB_DATA.oblig.toLocaleString()} ر.س` },
             ].map(({ key, icon, label, value }) => (
               <div

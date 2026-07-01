@@ -1,8 +1,10 @@
 import { MobileContainer } from "@/components/MobileContainer";
 import { LogOut, Bell, Pencil, Eye, Receipt, SendHorizontal, Smartphone, Car, CreditCard } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
+import { useAccount } from "@/lib/AccountProvider";
 
 export default function HomeAr() {
+  const { balance } = useAccount();
   return (
     <MobileContainer className="bg-background p-4 text-right text-foreground" hasGlow={false}>
       <div dir="rtl" className="flex-1 flex flex-col h-full w-full">
@@ -37,7 +39,7 @@ export default function HomeAr() {
           <div className="flex justify-end items-center mt-4">
             <div className="flex items-center gap-2" dir="ltr">
               <Eye className="w-5 h-5 text-muted-foreground mr-2" />
-              <span className="text-3xl font-bold tracking-tight text-foreground">0.00</span>
+              <span className="text-3xl font-bold tracking-tight text-foreground">{balance.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
               <span className="text-lg text-muted-foreground">ر.س</span>
             </div>
           </div>
