@@ -13,6 +13,7 @@ import FinanceEn from "@/pages/FinanceEn";
 import Store from "@/pages/Store";
 import Services from "@/pages/Services";
 import CrowdFinance from "@/pages/CrowdFinance";
+import Investments from "@/pages/Investments";
 import Transfers from "@/pages/Transfers";
 import Payments from "@/pages/Payments";
 
@@ -29,6 +30,7 @@ function Router() {
       <Route path="/store" component={Store} />
       <Route path="/services" component={Services} />
       <Route path="/crowd-finance" component={CrowdFinance} />
+      <Route path="/investments" component={Investments} />
       <Route path="/transfers" component={Transfers} />
       <Route path="/payments" component={Payments} />
       <Route component={NotFound} />

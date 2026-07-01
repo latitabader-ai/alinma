@@ -16,11 +16,11 @@ const ACTIVE_REQUEST = {
   eta: "5 أيام",
   updated: "قبل ساعتين",
   contributors: [
-    { name: "ع****ه", amount: 15000, when: "قبل يوم" },
-    { name: "م****د", amount: 12000, when: "قبل يومين" },
-    { name: "ن****ا", amount: 10000, when: "قبل 3 أيام" },
-    { name: "س****ي", amount: 8000, when: "قبل 4 أيام" },
-    { name: "ف****ة", amount: 7000, when: "قبل 5 أيام" },
+    { name: "مساهم ع. ش.", amount: 15000, status: "مؤكّدة" as const },
+    { name: "مساهم م. د.", amount: 12000, status: "مؤكّدة" as const },
+    { name: "مساهم ن. ع.", amount: 10000, status: "مؤكّدة" as const },
+    { name: "مساهم س. ي.", amount: 8000, status: "قيد المعالجة" as const },
+    { name: "مساهم ف. ة.", amount: 7000, status: "قيد المعالجة" as const },
   ],
 };
 
@@ -247,20 +247,33 @@ export default function FinanceAr() {
                 <h3 className="font-bold text-sm text-foreground">المساهمون ({ACTIVE_REQUEST.contributors.length})</h3>
               </div>
               <div className="space-y-2">
-                {ACTIVE_REQUEST.contributors.map((c, i) => (
-                  <div key={i} className="flex items-center justify-between bg-muted rounded-xl px-3 py-2.5">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-full bg-accent/15 text-accent flex items-center justify-center text-xs font-black">
-                        {c.name.charAt(0)}
+                {ACTIVE_REQUEST.contributors.map((c, i) => {
+                  const sharePct = Math.round((c.amount / ACTIVE_REQUEST.amount) * 100);
+                  return (
+                    <div key={i} className="flex items-center justify-between bg-muted rounded-xl px-3 py-2.5">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-full bg-accent/15 text-accent flex items-center justify-center text-xs font-black">
+                          {c.name.replace("مساهم ", "").charAt(0)}
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-foreground">{c.name}</p>
+                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full inline-flex items-center gap-1 ${
+                            c.status === "مؤكّدة"
+                              ? "bg-green-500/15 text-green-600 dark:text-green-400"
+                              : "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                          }`}>
+                            {c.status === "مؤكّدة" ? <CheckCircle2 className="w-2.5 h-2.5" /> : <Loader2 className="w-2.5 h-2.5" />}
+                            {c.status}
+                          </span>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-xs font-bold text-foreground" dir="ltr">{c.name}</p>
-                        <p className="text-[9px] text-muted-foreground">{c.when}</p>
+                      <div className="text-left">
+                        <p className="text-xs font-black text-foreground">{c.amount.toLocaleString()} ر.س</p>
+                        <p className="text-[9px] text-muted-foreground">{sharePct}% من الطلب</p>
                       </div>
                     </div>
-                    <span className="text-xs font-black text-foreground">{c.amount.toLocaleString()} ر.س</span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
               <p className="text-center text-[10px] text-muted-foreground mt-3 leading-relaxed">
                 🔒 أسماء المساهمين مقنّعة حفاظاً على الخصوصية · يُدار عبر مصرف الإنماء

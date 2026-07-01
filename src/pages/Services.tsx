@@ -18,7 +18,7 @@ export default function Services() {
           <ServiceIcon icon={CreditCard} label="البطاقات" />
           <ServiceIcon icon={Building} label="التمويل" href="/finance-ar" />
           <ServiceIcon icon={PiggyBank} label="الادخار" />
-          <ServiceIcon icon={TrendingUp} label="الاستثمار" />
+          <ServiceIcon icon={TrendingUp} label="الاستثمار" href="/investments" />
           <ServiceIcon icon={Users} label="العائلة" />
           <ServiceIcon icon={Star} label="أكثر" />
           <ServiceIcon icon={FileText} label="الشهادات" />
