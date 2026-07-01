@@ -2,6 +2,7 @@ import { useState } from "react";
 import { MobileContainer } from "@/components/MobileContainer";
 import { ChevronRight, CheckCircle2, AlertTriangle, XCircle, Sparkles, TrendingUp, Loader2, PieChart } from "lucide-react";
 import { Link } from "wouter";
+import { useToast } from "@/hooks/use-toast";
 
 type Tab = "apply" | "invest" | "how";
 type RiskLevel = "low" | "mid" | "high" | null;
@@ -100,6 +101,7 @@ export default function CrowdFinance() {
   const [investAmt, setInvestAmt] = useState("10000");
   const [allocating, setAllocating] = useState(false);
   const [allocations, setAllocations] = useState<Alloc[] | null>(null);
+  const { toast } = useToast();
 
   function handleAssess() { setResult(assess(+amount, +term, +salary, +oblig, +credit, +tenure, emp)); }
 
@@ -299,7 +301,23 @@ export default function CrowdFinance() {
                     </div>
                   ))}
 
-                  <button className="w-full bg-accent text-accent-foreground font-bold text-sm py-3 rounded-xl active:scale-95 transition-transform mt-1">
+                  <button
+                    onClick={() => {
+                      setOpps(prev => prev.map(o => {
+                        const alloc = allocations!.find(a => a.opp.id === o.id);
+                        if (!alloc) return o;
+                        return { ...o, raised: Math.min(o.goal, o.raised + alloc.amount) };
+                      }));
+                      const total = allocations!.reduce((s, a) => s + a.amount, 0);
+                      setAllocations(null);
+                      setInvestAmt("10000");
+                      toast({
+                        title: "✅ تم الاستثمار بنجاح",
+                        description: `وُزِّع ${total.toLocaleString()} ر.س على ${allocations!.length} فرص استثمارية بعائد متوقع ${avgRet}%`,
+                      });
+                    }}
+                    className="w-full bg-accent text-accent-foreground font-bold text-sm py-3 rounded-xl active:scale-95 transition-transform mt-1"
+                  >
                     تأكيد الاستثمار الذكي
                   </button>
                 </div>
