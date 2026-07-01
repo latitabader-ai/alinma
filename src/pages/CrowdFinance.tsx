@@ -145,10 +145,10 @@ export default function CrowdFinance() {
             <div className="w-6" />
           </div>
           <div className="flex border-b border-border">
-            {(["apply", "invest", "how"] as Tab[]).map((t, i) => (
+            {([["apply", "طلب تمويل"], ["how", "كيف يقيّم؟"]] as [Tab, string][]).map(([t, label]) => (
               <button key={t} onClick={() => setTab(t)}
                 className={`flex-1 py-3 text-[13px] font-bold border-b-2 transition-all ${tab === t ? "text-foreground border-accent" : "text-muted-foreground border-transparent"}`}>
-                {["طلب تمويل", "فرص المساهمة", "كيف يقيّم؟"][i]}
+                {label}
               </button>
             ))}
           </div>
@@ -235,8 +235,8 @@ export default function CrowdFinance() {
             </div>
           )}
 
-          {/* ===== Tab 2: Invest ===== */}
-          {tab === "invest" && (
+          {/* ===== Tab 2: Invest (نُقل للمموّل في شاشة الاستثمار) ===== */}
+          {false && (
             <div className="space-y-4">
 
               {/* زر الاستثمار الذكي التلقائي */}
@@ -370,10 +370,6 @@ export default function CrowdFinance() {
                   </div>
                 );
               })}
-
-              <p className="text-center text-[10px] text-muted-foreground leading-relaxed">
-                كل فرصة مرّت بمحرّك التقييم · أموالك موزّعة لتقليل المخاطر · يديرها الإنماء
-              </p>
             </div>
           )}
 
@@ -406,13 +402,7 @@ export default function CrowdFinance() {
               <div className="bg-card rounded-2xl p-5 border border-border">
                 <h3 className="font-bold text-base text-foreground mb-2">القاعدة الأساسية</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  نسبة عبء الدين = (الالتزامات + القسط الجديد) ÷ الراتب. وفق حدود ساما، تجاوز 45% يعني رفضاً تلقائياً.
-                </p>
-              </div>
-              <div className="bg-muted border border-border rounded-2xl p-5">
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  <span className="text-amber-500 font-bold">للجنة بصدق: </span>
-                  المحرّك يحاكي منطق نموذج Random Forest درّبناه على 800 سجل اصطناعي بدقّة ~71%. في المرحلة القادمة نعيد تدريبه على بيانات حقيقية عبر Open Banking Sandbox.
+                  نسبة عبء الدين = (الالتزامات + القسط الجديد) ÷ الراتب. وفق حدود ساما, تجاوز 45% يعني رفضاً تلقائياً.
                 </p>
               </div>
             </div>
