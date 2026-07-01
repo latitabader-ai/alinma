@@ -1,11 +1,28 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { MobileContainer } from "@/components/MobileContainer";
-import { Plus, FileSearch, Calculator, UserSquare, Home as HomeIcon, Car, Users, GraduationCap, ChevronRight, AlertTriangle, TrendingDown, Zap, CheckCircle2, Loader2, Building2, FileText, Wallet } from "lucide-react";
+import { Plus, FileSearch, Calculator, UserSquare, Home as HomeIcon, Car, Users, GraduationCap, ChevronRight, AlertTriangle, TrendingDown, Zap, CheckCircle2, Loader2, Building2, FileText, Wallet, Clock, RefreshCw } from "lucide-react";
 import { Link } from "wouter";
 import { Slider } from "@/components/ui/slider";
 import { useAccount } from "@/lib/AccountProvider";
 
 const MARGIN_RATE = 0.065;
+
+// الطلب النشط لطالب التمويل (تتبّع الطلب — الميزة 2)
+const ACTIVE_REQUEST = {
+  item: "تمويل سيارة",
+  amount: 80000,
+  funded: 52000,
+  months: 36,
+  eta: "5 أيام",
+  updated: "قبل ساعتين",
+  contributors: [
+    { name: "ع****ه", amount: 15000, when: "قبل يوم" },
+    { name: "م****د", amount: 12000, when: "قبل يومين" },
+    { name: "ن****ا", amount: 10000, when: "قبل 3 أيام" },
+    { name: "س****ي", amount: 8000, when: "قبل 4 أيام" },
+    { name: "ف****ة", amount: 7000, when: "قبل 5 أيام" },
+  ],
+};
 
 function calcInstallment(amount: number, months: number) {
   const total = amount * (1 + MARGIN_RATE * (months / 12));
@@ -27,8 +44,20 @@ export default function FinanceAr() {
   const OB_DATA = { salary: obSalary, oblig: obOblig, statement: obStatement };
 
   const [showCalc, setShowCalc] = useState(false);
+  const [showTracking, setShowTracking] = useState(false);
   const [obStatus, setObStatus] = useState<ObStatus>("idle");
   const [verified, setVerified] = useState({ salary: false, statement: false, oblig: false });
+
+  // نسبة التمويل المتحرّكة (تبدأ 0 ثم تتحرّك للقيمة الفعلية)
+  const fundedPct = Math.round((ACTIVE_REQUEST.funded / ACTIVE_REQUEST.amount) * 100);
+  const [progress, setProgress] = useState(0);
+  useEffect(() => {
+    if (showTracking) {
+      const t = setTimeout(() => setProgress(fundedPct), 100);
+      return () => clearTimeout(t);
+    }
+    setProgress(0);
+  }, [showTracking, fundedPct]);
 
   const [amount, setAmount] = useState(100000);
   const [months, setMonths] = useState(36);
@@ -149,12 +178,13 @@ export default function FinanceAr() {
             </div>
             <span className="text-[11px] font-medium text-center text-foreground">حاسبة التمويل</span>
           </button>
-          <div className="flex flex-col items-center gap-2 flex-1">
-            <div className="w-14 h-14 bg-card rounded-2xl flex items-center justify-center text-foreground border border-border">
+          <button onClick={() => setShowTracking(v => !v)} className="flex flex-col items-center gap-2 flex-1">
+            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border transition-colors relative ${showTracking ? "bg-accent text-accent-foreground border-accent" : "bg-card text-foreground border-border"}`}>
               <FileSearch className="w-6 h-6" />
+              <span className="absolute -top-1 -left-1 w-4 h-4 bg-green-500 rounded-full text-[9px] text-white flex items-center justify-center font-bold">1</span>
             </div>
             <span className="text-[11px] font-medium text-center text-foreground">متابعة الطلبات</span>
-          </div>
+          </button>
           <div className="flex flex-col items-center gap-2 flex-1">
             <div className="w-14 h-14 bg-card rounded-2xl flex items-center justify-center text-foreground border border-border">
               <Plus className="w-6 h-6" />
@@ -162,6 +192,82 @@ export default function FinanceAr() {
             <span className="text-[11px] font-medium text-center text-foreground">تمويل جديد</span>
           </div>
         </div>
+
+        {/* ===== حالة طلب التمويل الحالي (تتبّع الطلب) ===== */}
+        {showTracking && (
+          <div className="bg-card rounded-3xl p-5 mb-8 border border-border space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="font-bold text-lg text-foreground">حالة طلب التمويل الحالي</h2>
+              <span className="text-[10px] font-bold text-green-600 dark:text-green-400 bg-green-500/10 border border-green-500/30 px-2.5 py-1 rounded-full flex items-center gap-1">
+                <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                نشط
+              </span>
+            </div>
+
+            <p className="text-sm text-muted-foreground">{ACTIVE_REQUEST.item} · على {ACTIVE_REQUEST.months} شهراً</p>
+
+            {/* بطاقة الحالة — أربع خانات */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-muted rounded-2xl p-3">
+                <p className="text-[10px] text-muted-foreground mb-1">المبلغ المطلوب</p>
+                <p className="text-base font-black text-foreground">{ACTIVE_REQUEST.amount.toLocaleString()} <span className="text-[10px] font-normal text-muted-foreground">ر.س</span></p>
+              </div>
+              <div className="bg-muted rounded-2xl p-3">
+                <p className="text-[10px] text-muted-foreground mb-1">المتبقّي</p>
+                <p className="text-base font-black text-accent">{(ACTIVE_REQUEST.amount - ACTIVE_REQUEST.funded).toLocaleString()} <span className="text-[10px] font-normal text-muted-foreground">ر.س</span></p>
+              </div>
+              <div className="bg-muted rounded-2xl p-3">
+                <p className="text-[10px] text-muted-foreground mb-1 flex items-center gap-1"><Clock className="w-3 h-3" /> الوقت المتوقّع</p>
+                <p className="text-base font-black text-foreground">{ACTIVE_REQUEST.eta}</p>
+              </div>
+              <div className="bg-muted rounded-2xl p-3">
+                <p className="text-[10px] text-muted-foreground mb-1 flex items-center gap-1"><RefreshCw className="w-3 h-3" /> آخر تحديث</p>
+                <p className="text-base font-black text-foreground">{ACTIVE_REQUEST.updated}</p>
+              </div>
+            </div>
+
+            {/* شريط التقدّم المتحرّك */}
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm font-black text-green-600 dark:text-green-400">{fundedPct}% مموّل</span>
+                <span className="text-xs text-muted-foreground">{ACTIVE_REQUEST.funded.toLocaleString()} من {ACTIVE_REQUEST.amount.toLocaleString()} ر.س</span>
+              </div>
+              <div className="h-3 bg-muted rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-l from-green-500 to-emerald-400 rounded-full transition-all duration-1000 ease-out"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
+
+            {/* قائمة المساهمين بأسماء مقنّعة */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <Users className="w-4 h-4 text-accent" />
+                <h3 className="font-bold text-sm text-foreground">المساهمون ({ACTIVE_REQUEST.contributors.length})</h3>
+              </div>
+              <div className="space-y-2">
+                {ACTIVE_REQUEST.contributors.map((c, i) => (
+                  <div key={i} className="flex items-center justify-between bg-muted rounded-xl px-3 py-2.5">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-full bg-accent/15 text-accent flex items-center justify-center text-xs font-black">
+                        {c.name.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-foreground" dir="ltr">{c.name}</p>
+                        <p className="text-[9px] text-muted-foreground">{c.when}</p>
+                      </div>
+                    </div>
+                    <span className="text-xs font-black text-foreground">{c.amount.toLocaleString()} ر.س</span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-center text-[10px] text-muted-foreground mt-3 leading-relaxed">
+                🔒 أسماء المساهمين مقنّعة حفاظاً على الخصوصية · يُدار عبر مصرف الإنماء
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* ===== حاسبة التمويل الذكية ===== */}
         {showCalc && (
