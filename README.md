@@ -39,7 +39,9 @@
 |---|---|
 | الواجهة | React 18.3 + TypeScript + Vite 6 |
 | التنسيق | Tailwind CSS v4 + shadcn/ui |
-| الحركة | Framer Motion |
+| الحركة والتوجيه | Framer Motion + Wouter |
+| محرك تقييم المخاطر | خوارزمية تقييم مرجّح (Weighted Scoring Algorithm) بـ TypeScript |
+| المصرفية المفتوحة | طبقة محاكاة (Mock API) لسحب البيانات المالية لحظياً |
 | الذكاء الاصطناعي | Python — scikit-learn |
 | النشر | Netlify |
 
