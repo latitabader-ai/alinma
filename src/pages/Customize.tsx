@@ -50,13 +50,13 @@ export default function Customize() {
           <div className="bg-gray-50 border border-gray-100 rounded-xl p-4 flex flex-col items-center text-center gap-2">
             <div className="text-accent text-lg">★★★★</div>
             <h3 className="font-medium text-sm">Points</h3>
-            <p className="text-[10px] text-muted-foreground">XXX points expires on 28 Mar 2006 — Akthr</p>
+            <p className="text-[10px] text-muted-foreground">1,250 points expire on 28 Mar 2027 — Akthr</p>
           </div>
           
           <div className="bg-gray-50 border border-gray-100 rounded-xl p-4 flex flex-col items-center text-center gap-2">
             <div className="text-primary text-lg">★★★★</div>
             <h3 className="font-medium text-sm">Total invested</h3>
-            <p className="text-[10px] text-muted-foreground">XX Subscription — Nama</p>
+            <p className="text-[10px] text-muted-foreground">3 active subscriptions — Nama</p>
           </div>
         </div>
 
