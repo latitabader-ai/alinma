@@ -3,3 +3,7 @@ dist/
 .env
 .env.local
 *.local
+
+# أدوات محلية / بيئات خارجية — لا مكان لها في المستودع
+.claude/
+.replit-artifact/
