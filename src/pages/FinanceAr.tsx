@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { MobileContainer } from "@/components/MobileContainer";
 import { Plus, FileSearch, Calculator, UserSquare, Home as HomeIcon, Car, Users, GraduationCap, ChevronRight, AlertTriangle, TrendingDown, Zap, CheckCircle2, Loader2, Building2, FileText, Wallet, Clock, RefreshCw } from "lucide-react";
 import { Link } from "wouter";
@@ -193,9 +194,15 @@ export default function FinanceAr() {
           </div>
         </div>
 
-        {/* ===== حالة طلب التمويل الحالي (تتبّع الطلب) ===== */}
+        {/* ===== حالة طلب التمويل الحالي (تتبّع الطلب) — حركة framer-motion ===== */}
+        <AnimatePresence>
         {showTracking && (
-          <div className="bg-card rounded-3xl p-5 mb-8 border border-border space-y-4">
+          <motion.div
+            initial={{ opacity: 0, y: -12, height: 0 }}
+            animate={{ opacity: 1, y: 0, height: "auto" }}
+            exit={{ opacity: 0, y: -12, height: 0 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+            className="bg-card rounded-3xl p-5 mb-8 border border-border space-y-4 overflow-hidden">
             <div className="flex items-center justify-between">
               <h2 className="font-bold text-lg text-foreground">حالة طلب التمويل الحالي</h2>
               <span className="text-[10px] font-bold text-green-600 dark:text-green-400 bg-green-500/10 border border-green-500/30 px-2.5 py-1 rounded-full flex items-center gap-1">
@@ -279,8 +286,9 @@ export default function FinanceAr() {
                 🔒 أسماء المساهمين مقنّعة حفاظاً على الخصوصية · يُدار عبر مصرف الإنماء
               </p>
             </div>
-          </div>
+          </motion.div>
         )}
+        </AnimatePresence>
 
         {/* ===== حاسبة التمويل الذكية ===== */}
         {showCalc && (

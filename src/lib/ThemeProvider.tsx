@@ -1,51 +1,34 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { ReactNode } from "react";
+import { ThemeProvider as NextThemesProvider, useTheme as useNextTheme } from "next-themes";
 
 // ============================================================
 //  ThemeProvider — إدارة الوضع الفاتح/الداكن (الميزة 1)
-//  - يحفظ اختيار المستخدم في localStorage
-//  - يطبّق كلاس "dark" على <html> لتفعيل الوضع الداكن
-//  - كل الشاشات تتبعه تلقائياً لأنها تستخدم متغيّرات CSS
+//  مبني فوق next-themes: يطبّق كلاس "dark" على <html> ويحفظ
+//  الاختيار في localStorage تلقائياً. كل الشاشات تتبعه لأنها
+//  تستخدم متغيّرات CSS. نبقي واجهة { theme, toggleTheme } كما هي.
 // ============================================================
 
 type Theme = "light" | "dark";
 
-interface ThemeContextType {
-  theme: Theme;
-  toggleTheme: () => void;
-}
-
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
-
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  // نبدأ بالوضع الداكن (التصميم الأصلي) ما لم يحفظ المستخدم غيره
-  const [theme, setTheme] = useState<Theme>(() => {
-    const saved = localStorage.getItem("alinma-theme");
-    return (saved === "light" || saved === "dark") ? saved : "dark";
-  });
-
-  // تطبيق الثيم على عنصر <html> وحفظه عند كل تغيير
-  useEffect(() => {
-    const root = document.documentElement;
-    if (theme === "dark") {
-      root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
-    }
-    localStorage.setItem("alinma-theme", theme);
-  }, [theme]);
-
-  const toggleTheme = () => setTheme((t) => (t === "dark" ? "light" : "dark"));
-
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <NextThemesProvider
+      attribute="class"          // يضيف/يزيل class="dark" على <html>
+      defaultTheme="dark"        // الوضع الداكن هو الأصلي
+      enableSystem={false}       // لا نتبع نظام التشغيل — اختيار المستخدم فقط
+      storageKey="alinma-theme"  // نفس مفتاح الحفظ السابق
+    >
       {children}
-    </ThemeContext.Provider>
+    </NextThemesProvider>
   );
 }
 
-// خطّاف للوصول للثيم من أي مكوّن
+// خطّاف بواجهة ثابتة يلفّ next-themes
 export function useTheme() {
-  const ctx = useContext(ThemeContext);
-  if (!ctx) throw new Error("useTheme must be used within ThemeProvider");
-  return ctx;
+  const { theme, resolvedTheme, setTheme } = useNextTheme();
+  const current = ((resolvedTheme ?? theme) as Theme) || "dark";
+  return {
+    theme: current,
+    toggleTheme: () => setTheme(current === "dark" ? "light" : "dark"),
+  };
 }

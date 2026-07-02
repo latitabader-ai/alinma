@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { MobileContainer } from "@/components/MobileContainer";
 import { ChevronRight, TrendingUp, Briefcase, Sprout, FileSignature, HandCoins, Clock, Car, Store, User, Wrench, Sparkles, Loader2, PieChart, ShieldCheck } from "lucide-react";
 import { Link } from "wouter";
@@ -251,46 +252,66 @@ export default function Investments() {
                 </div>
               </div>
 
-              {/* ملخّص التوزيع */}
-              {allocations && (
-                <div className="bg-card border border-border rounded-2xl p-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-500">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <PieChart className="w-4 h-4 text-accent" />
-                      <span className="font-black text-sm text-foreground">ملخّص التوزيع</span>
-                    </div>
-                    <div className="text-left">
-                      <span className="text-[10px] text-muted-foreground">العائد الإجمالي المتوقّع </span>
-                      <span className="text-accent font-black text-sm">{allocAvgRet}%</span>
-                    </div>
-                  </div>
-
-                  {/* شريط التوزيع البصري */}
-                  <div className="flex h-2.5 rounded-full overflow-hidden gap-px">
-                    {allocations.map(a => (
-                      <div key={a.opp.id} className={`${LC[a.opp.level].bar} transition-all duration-700`} style={{ width: `${a.sharePct}%` }} />
-                    ))}
-                  </div>
-
-                  {allocations.map(a => (
-                    <div key={a.opp.id} className="flex items-center justify-between">
+              {/* ملخّص التوزيع — حركة framer-motion */}
+              <AnimatePresence>
+                {allocations && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -12, height: 0 }}
+                    animate={{ opacity: 1, y: 0, height: "auto" }}
+                    exit={{ opacity: 0, y: -12, height: 0 }}
+                    transition={{ duration: 0.4, ease: "easeOut" }}
+                    className="bg-card border border-border rounded-2xl p-4 space-y-3 overflow-hidden"
+                  >
+                    <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className={`w-2 h-2 rounded-full ${LC[a.opp.level].dot}`} />
-                        <span className="text-xs text-foreground font-medium">{a.opp.title}</span>
-                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${LC[a.opp.level].badge}`}>{a.sharePct}%</span>
+                        <PieChart className="w-4 h-4 text-accent" />
+                        <span className="font-black text-sm text-foreground">ملخّص التوزيع</span>
                       </div>
                       <div className="text-left">
-                        <span className="text-sm font-black text-foreground">{a.amount.toLocaleString()}</span>
-                        <span className="text-[10px] text-muted-foreground"> ر.س · {a.opp.retPct}%</span>
+                        <span className="text-[10px] text-muted-foreground">العائد الإجمالي المتوقّع </span>
+                        <span className="text-accent font-black text-sm">{allocAvgRet}%</span>
                       </div>
                     </div>
-                  ))}
 
-                  <button onClick={confirmSmartInvest} className="w-full bg-accent text-accent-foreground font-bold text-sm py-3 rounded-xl active:scale-95 transition-transform mt-1">
-                    تأكيد الاستثمار الذكي
-                  </button>
-                </div>
-              )}
+                    {/* شريط التوزيع البصري — كل جزء ينمو بحركة */}
+                    <div className="flex h-2.5 rounded-full overflow-hidden gap-px">
+                      {allocations.map((a, i) => (
+                        <motion.div
+                          key={a.opp.id}
+                          className={LC[a.opp.level].bar}
+                          initial={{ width: 0 }}
+                          animate={{ width: `${a.sharePct}%` }}
+                          transition={{ duration: 0.6, delay: 0.1 + i * 0.08, ease: "easeOut" }}
+                        />
+                      ))}
+                    </div>
+
+                    {allocations.map((a, i) => (
+                      <motion.div
+                        key={a.opp.id}
+                        className="flex items-center justify-between"
+                        initial={{ opacity: 0, x: 10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.3, delay: 0.15 + i * 0.08 }}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className={`w-2 h-2 rounded-full ${LC[a.opp.level].dot}`} />
+                          <span className="text-xs text-foreground font-medium">{a.opp.title}</span>
+                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${LC[a.opp.level].badge}`}>{a.sharePct}%</span>
+                        </div>
+                        <div className="text-left">
+                          <span className="text-sm font-black text-foreground">{a.amount.toLocaleString()}</span>
+                          <span className="text-[10px] text-muted-foreground"> ر.س · {a.opp.retPct}%</span>
+                        </div>
+                      </motion.div>
+                    ))}
+
+                    <button onClick={confirmSmartInvest} className="w-full bg-accent text-accent-foreground font-bold text-sm py-3 rounded-xl active:scale-95 transition-transform mt-1">
+                      تأكيد الاستثمار الذكي
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {/* فرص التمويل للمساهمة */}
               <div>
