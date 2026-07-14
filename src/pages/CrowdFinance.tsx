@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { MobileContainer } from "@/components/MobileContainer";
-import { ChevronRight, CheckCircle2, AlertTriangle, XCircle, Loader2, Cpu, WifiOff, Landmark, Lock } from "lucide-react";
+import { ChevronRight, CheckCircle2, AlertTriangle, XCircle, Loader2, Cpu, WifiOff } from "lucide-react";
 import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAccount } from "@/lib/AccountProvider";
+import OpenBankingConnect from "@/components/OpenBankingConnect";
 import { assessViaApi, warmUpApi } from "@/lib/riskApi";
 
 type Tab = "apply" | "how";
@@ -73,23 +73,6 @@ export default function CrowdFinance() {
   const [item, setItem]     = useState("سيارة");
   const [emp, setEmp]       = useState("حكومي");
   const [assessing, setAssessing] = useState(false);
-
-  // المصرفية المفتوحة — تعبئة تلقائية للحقول (مع إبقاء التعديل اليدوي)
-  const { salary: obSalary, oblig: obOblig, creditScore } = useAccount();
-  const [obFilling, setObFilling] = useState(false);
-  const [obFilled, setObFilled] = useState(false);
-  function fillFromOpenBanking() {
-    if (obFilling) return;
-    setObFilling(true);
-    setTimeout(() => {
-      setSalary(String(obSalary));
-      setOblig(String(obOblig));
-      setCredit(String(creditScore));
-      setTenure("48");
-      setObFilling(false);
-      setObFilled(true);
-    }, 1600);
-  }
 
   // إيقاظ خادم النموذج مبكّراً ليكون جاهزاً عند التقييم
   useEffect(() => { warmUpApi(); }, []);
@@ -165,27 +148,15 @@ export default function CrowdFinance() {
               </div>
               <p className="text-muted-foreground text-sm leading-relaxed">املأ بياناتك تلقائياً عبر المصرفية المفتوحة، أو أدخلها يدوياً — وسيقيّم محرّك الذكاء الاصطناعي أهليتك فوراً.</p>
 
-              {/* زر المصرفية المفتوحة — تعبئة تلقائية (مع إبقاء الإدخال اليدوي) */}
-              <button
-                onClick={fillFromOpenBanking}
-                disabled={obFilling}
-                className={`w-full rounded-2xl p-3.5 flex items-center gap-3 transition-all border-2 ${
-                  obFilled ? "bg-green-500/10 border-green-500/50" : "bg-gradient-to-l from-accent/20 to-accent/5 border-accent/60 active:scale-[0.98]"
-                }`}
-              >
-                <span className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${obFilled ? "bg-green-500/20" : "bg-accent/20"}`}>
-                  {obFilling ? <Loader2 className="w-5 h-5 text-accent animate-spin" /> : obFilled ? <CheckCircle2 className="w-5 h-5 text-green-500" /> : <Landmark className="w-5 h-5 text-accent" />}
-                </span>
-                <div className="text-right flex-1">
-                  <p className={`text-sm font-black ${obFilled ? "text-green-600 dark:text-green-400" : "text-foreground"}`}>
-                    {obFilling ? "جارٍ جلب بياناتك..." : obFilled ? "تم ملء البيانات تلقائياً ✓" : "املأ عبر المصرفية المفتوحة"}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1">
-                    <Lock className="w-2.5 h-2.5" /> {obFilled ? "يمكنك تعديل أي حقل يدوياً" : "الراتب والالتزامات والتصنيف الائتماني · بلمسة"}
-                  </p>
-                </div>
-                {!obFilled && !obFilling && <span className="text-[10px] font-bold text-accent border border-accent/40 px-2 py-1 rounded-full shrink-0">ربط</span>}
-              </button>
+              {/* المصرفية المفتوحة الكاملة — تملأ حقول الطلب تلقائياً (مع إبقاء التعديل اليدوي) */}
+              <OpenBankingConnect
+                onFilled={({ salary, oblig, credit }) => {
+                  setSalary(String(salary));
+                  setOblig(String(oblig));
+                  setCredit(String(credit));
+                  setTenure("48");
+                }}
+              />
 
               <div className="space-y-3">
                 <div>

@@ -1,11 +1,9 @@
 import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MobileContainer } from "@/components/MobileContainer";
-import { Plus, FileSearch, Calculator, UserSquare, Home as HomeIcon, Car, Users, GraduationCap, ChevronRight, ChevronLeft, AlertTriangle, TrendingDown, CheckCircle2, Loader2, Building2, FileText, Wallet, Clock, RefreshCw, ShieldCheck, Lock, Landmark, Gauge } from "lucide-react";
+import { Plus, FileSearch, Calculator, UserSquare, Home as HomeIcon, Car, Users, GraduationCap, ChevronRight, AlertTriangle, TrendingDown, CheckCircle2, Loader2, Clock, RefreshCw } from "lucide-react";
 import { Link } from "wouter";
 import { Slider } from "@/components/ui/slider";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useAccount } from "@/lib/AccountProvider";
 
 const MARGIN_RATE = 0.065;
 
@@ -38,42 +36,9 @@ function maxAllowedAmount(salary: number, oblig: number, months = 36) {
   return Math.floor(maxInstallment / factor / 1000) * 1000;
 }
 
-type ObStatus = "idle" | "consent" | "loading" | "done";
-
-// خطوات الربط الحيّة (Open Banking Hub)
-const OB_STEPS = [
-  "تأمين اتصال مشفّر مع البنوك المختارة",
-  "التحقق من الهوية ومنح الإذن",
-  "جلب الراتب وكشف الحساب",
-  "تحليل الالتزامات القائمة",
-  "جلب التصنيف الائتماني (سمة)",
-];
-
-// البنوك المتاحة للربط عبر المصرفية المفتوحة (SAMA Open Banking)
-const OB_BANKS = [
-  { id: "alinma",  name: "مصرف الإنماء", short: "الإنماء", color: "bg-accent",       primary: true },
-  { id: "rajhi",   name: "مصرف الراجحي", short: "الراجحي", color: "bg-blue-600",     primary: false },
-  { id: "snb",     name: "البنك الأهلي السعودي", short: "الأهلي", color: "bg-emerald-600", primary: false },
-  { id: "riyad",   name: "بنك الرياض",   short: "الرياض", color: "bg-indigo-600",    primary: false },
-];
-
 export default function FinanceAr() {
-  // البيانات المتّسقة تُسحب من حالة الحساب المشتركة (لا قيماً عشوائية)
-  const { balance, salary: obSalary, oblig: obOblig, creditScore, accountMask } = useAccount();
-  const OB_DATA = { salary: obSalary, oblig: obOblig, credit: creditScore };
-
   const [showCalc, setShowCalc] = useState(false);
   const [showTracking, setShowTracking] = useState(false);
-  const [obStatus, setObStatus] = useState<ObStatus>("idle");
-  const [verified, setVerified] = useState({ salary: false, statement: false, oblig: false, credit: false });
-  const [obStep, setObStep] = useState(0); // الخطوة الحالية في الربط الحيّ
-
-  // إدارة الموافقات: البنوك المختارة + إذن القراءة (SAMA)
-  const [selectedBanks, setSelectedBanks] = useState<string[]>(["alinma"]);
-  const [readConsent, setReadConsent] = useState(false);
-  function toggleBank(id: string) {
-    setSelectedBanks(prev => prev.includes(id) ? prev.filter(b => b !== id) : [...prev, id]);
-  }
 
   // نسبة التمويل المتحرّكة (تبدأ 0 ثم تتحرّك للقيمة الفعلية)
   const fundedPct = Math.round((ACTIVE_REQUEST.funded / ACTIVE_REQUEST.amount) * 100);
@@ -97,29 +62,6 @@ export default function FinanceAr() {
   const isOver = dbr > 0.45;
   const suggestedAmount = useMemo(() => maxAllowedAmount(salary, oblig, 36), [salary, oblig]);
 
-  // فتح نافذة الموافقة (Consent) — الخطوة الأولى في المصرفية المفتوحة
-  function handleOpenBanking() {
-    if (obStatus === "loading") return;
-    if (obStatus === "done") { setObStatus("idle"); setVerified({ salary: false, statement: false, oblig: false, credit: false }); return; }
-    setObStatus("consent");
-  }
-
-  // بعد موافقة المستخدم — يبدأ الربط الحيّ خطوة بخطوة
-  function startConnect() {
-    setObStatus("loading");
-    setObStep(0);
-    const stepMs = 700;
-    OB_STEPS.forEach((_, i) => {
-      setTimeout(() => setObStep(i + 1), stepMs * (i + 1));
-      // مزامنة البيانات مع تقدّم الخطوات
-      if (i === 2) setTimeout(() => { setSalary(OB_DATA.salary); setVerified(v => ({ ...v, salary: true, statement: true })); }, stepMs * (i + 1));
-      if (i === 3) setTimeout(() => { setOblig(OB_DATA.oblig); setVerified(v => ({ ...v, oblig: true })); }, stepMs * (i + 1));
-      if (i === 4) setTimeout(() => { setVerified(v => ({ ...v, credit: true })); }, stepMs * (i + 1));
-    });
-    // إنهاء بعد آخر خطوة
-    setTimeout(() => { setObStatus("done"); setShowCalc(true); }, stepMs * (OB_STEPS.length + 1));
-  }
-
   const inputClass = "w-full bg-muted border border-border rounded-xl px-3 py-2.5 text-foreground text-sm font-medium focus:outline-none focus:border-accent";
 
   return (
@@ -130,106 +72,6 @@ export default function FinanceAr() {
         </header>
 
         <h1 className="text-foreground font-bold text-3xl mb-6">تمويلاتي</h1>
-
-        {/* ===== بطاقة المصرفية المفتوحة — CTA أساسي بارز بملء العرض ===== */}
-        <button
-          onClick={handleOpenBanking}
-          disabled={obStatus === "loading"}
-          className={`w-full mb-4 rounded-3xl p-5 flex items-center gap-4 text-right transition-all shadow-lg ${
-            obStatus === "done"
-              ? "bg-green-500/10 border-2 border-green-500/50"
-              : "bg-gradient-to-br from-accent to-orange-500 border-2 border-accent active:scale-[0.98] shadow-accent/30"
-          }`}
-        >
-          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${
-            obStatus === "done" ? "bg-green-500/20" : "bg-white/20"
-          }`}>
-            {obStatus === "loading" ? (
-              <Loader2 className="w-7 h-7 animate-spin text-white" />
-            ) : obStatus === "done" ? (
-              <ShieldCheck className="w-7 h-7 text-green-500" />
-            ) : (
-              <Landmark className="w-7 h-7 text-white" />
-            )}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className={`text-base font-black ${obStatus === "done" ? "text-green-600 dark:text-green-400" : "text-white"}`}>
-              {obStatus === "done" ? `متصل بمصرف الإنماء ${accountMask}` : "ربط سريع عبر المصرفية المفتوحة"}
-            </p>
-            <p className={`text-[11px] mt-1 leading-relaxed ${obStatus === "done" ? "text-muted-foreground" : "text-white/90"}`}>
-              {obStatus === "loading" ? "جارٍ جلب بياناتك المالية بأمان..." :
-               obStatus === "done" ? "بياناتك محدّثة · اضغط لإعادة المزامنة" :
-               "جلب الراتب والرصيد والالتزامات والتصنيف الائتماني · بدون إدخال يدوي"}
-            </p>
-          </div>
-          {obStatus === "idle" && (
-            <span className="flex items-center gap-1 text-xs font-black text-accent bg-white px-3 py-2 rounded-xl shrink-0 shadow">
-              اربط الآن
-              <ChevronLeft className="w-4 h-4" />
-            </span>
-          )}
-          {obStatus === "done" && <RefreshCw className="w-5 h-5 text-green-500 shrink-0" />}
-        </button>
-
-        {/* شارة أمان أسفل البطاقة (idle) */}
-        {obStatus === "idle" && (
-          <div className="flex items-center justify-center gap-3 mb-6 text-[10px] text-muted-foreground">
-            <span className="flex items-center gap-1"><Lock className="w-3 h-3" /> اتصال مشفّر</span>
-            <span className="w-1 h-1 rounded-full bg-muted-foreground/40" />
-            <span className="flex items-center gap-1"><ShieldCheck className="w-3 h-3" /> إطار المصرفية المفتوحة (ساما)</span>
-          </div>
-        )}
-
-        {/* ===== خطوات الربط الحيّة (أثناء التحميل) ===== */}
-        {obStatus === "loading" && (
-          <div className="bg-card border border-border rounded-2xl p-4 mb-6 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-black text-foreground flex items-center gap-1.5"><Lock className="w-3.5 h-3.5 text-accent" /> جلسة مؤمّنة</span>
-              <span className="text-[10px] text-muted-foreground">{obStep}/{OB_STEPS.length}</span>
-            </div>
-            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-              <div className="h-full bg-accent rounded-full transition-all duration-500" style={{ width: `${(obStep / OB_STEPS.length) * 100}%` }} />
-            </div>
-            <div className="space-y-2 pt-1">
-              {OB_STEPS.map((label, i) => {
-                const done = obStep > i;
-                const active = obStep === i;
-                return (
-                  <div key={i} className={`flex items-center gap-2.5 text-xs transition-all ${done ? "text-foreground" : active ? "text-foreground" : "text-muted-foreground/50"}`}>
-                    {done ? <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
-                      : active ? <Loader2 className="w-4 h-4 text-accent animate-spin shrink-0" />
-                      : <div className="w-4 h-4 rounded-full border-2 border-muted-foreground/30 shrink-0" />}
-                    <span className={done || active ? "font-medium" : ""}>{label}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* ===== البيانات المسحوبة (بعد الربط) — 4 بطاقات ===== */}
-        {obStatus === "done" && (
-          <div className="grid grid-cols-2 gap-2 mb-6">
-            {[
-              { key: "salary" as const, icon: <Wallet className="w-4 h-4" />, label: "الراتب الشهري", value: `${OB_DATA.salary.toLocaleString()} ر.س` },
-              { key: "statement" as const, icon: <FileText className="w-4 h-4" />, label: "الرصيد الجاري", value: `${balance.toLocaleString()} ر.س` },
-              { key: "oblig" as const, icon: <Building2 className="w-4 h-4" />, label: "الالتزامات", value: `${OB_DATA.oblig.toLocaleString()} ر.س` },
-              { key: "credit" as const, icon: <Gauge className="w-4 h-4" />, label: "التصنيف الائتماني (سمة)", value: `${OB_DATA.credit}` },
-            ].map(({ key, icon, label, value }) => (
-              <div key={key} className="rounded-xl p-3 border bg-green-500/10 border-green-500/40 flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-green-500/15 text-green-600 dark:text-green-400 flex items-center justify-center shrink-0">
-                  {icon}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[9px] text-muted-foreground font-medium flex items-center gap-1">
-                    {label} <CheckCircle2 className="w-2.5 h-2.5 text-green-500" />
-                  </p>
-                  <p className="text-sm font-black text-foreground truncate">{value}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
 
         {/* Quick Actions */}
         <div className="flex justify-between gap-3 mb-8">
@@ -397,17 +239,11 @@ export default function FinanceAr() {
             {/* الراتب والالتزامات */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <div className="flex items-center gap-1 mb-1.5">
-                  <label className="text-xs text-muted-foreground font-bold">الراتب الشهري</label>
-                  {verified.salary && <CheckCircle2 className="w-3 h-3 text-green-500" />}
-                </div>
+                <label className="block text-xs text-muted-foreground font-bold mb-1.5">الراتب الشهري</label>
                 <input type="number" value={salary} onChange={e => setSalary(Math.max(1, +e.target.value))} className={inputClass} />
               </div>
               <div>
-                <div className="flex items-center gap-1 mb-1.5">
-                  <label className="text-xs text-muted-foreground font-bold">الالتزامات</label>
-                  {verified.oblig && <CheckCircle2 className="w-3 h-3 text-green-500" />}
-                </div>
+                <label className="block text-xs text-muted-foreground font-bold mb-1.5">الالتزامات</label>
                 <input type="number" value={oblig} onChange={e => setOblig(Math.max(0, +e.target.value))} className={inputClass} />
               </div>
             </div>
@@ -570,108 +406,6 @@ export default function FinanceAr() {
           🔒 تُدار أموالك بأمان عبر مصرف الإنماء بالتوافق مع أنظمة البنك المركزي السعودي (ساما) ومبادئ التمويل الإسلامي.
         </p>
       </div>
-
-      {/* ===== نافذة الموافقة على المصرفية المفتوحة (Consent) ===== */}
-      <Dialog open={obStatus === "consent"} onOpenChange={(o) => { if (!o && obStatus === "consent") setObStatus("idle"); }}>
-        <DialogContent className="max-w-[350px] rounded-2xl" dir="rtl">
-          <DialogHeader>
-            <DialogTitle className="text-right flex items-center gap-2 text-foreground">
-              <span className="w-10 h-10 rounded-xl bg-accent/15 text-accent flex items-center justify-center">
-                <Landmark className="w-5 h-5" />
-              </span>
-              الربط عبر المصرفية المفتوحة
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="text-right space-y-4 max-h-[65vh] overflow-y-auto pl-1">
-            {/* 1) اختيار البنوك للربط */}
-            <div>
-              <p className="text-xs font-bold text-foreground mb-2">اختر البنوك التي تريد ربطها</p>
-              <div className="grid grid-cols-2 gap-2">
-                {OB_BANKS.map(bank => {
-                  const on = selectedBanks.includes(bank.id);
-                  return (
-                    <button
-                      key={bank.id}
-                      onClick={() => toggleBank(bank.id)}
-                      className={`relative flex items-center gap-2 rounded-xl p-2.5 border-2 text-right transition-all ${
-                        on ? "border-accent bg-accent/10" : "border-border bg-muted"
-                      }`}
-                    >
-                      <span className={`w-8 h-8 rounded-lg ${bank.color} text-white flex items-center justify-center text-xs font-black shrink-0`}>
-                        {bank.short.charAt(0)}
-                      </span>
-                      <span className="text-[11px] font-bold text-foreground leading-tight flex-1">{bank.short}</span>
-                      <span className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 ${on ? "bg-accent" : "border-2 border-muted-foreground/30"}`}>
-                        {on && <CheckCircle2 className="w-4 h-4 text-white" />}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* 2) البيانات التي ستُقرأ */}
-            <div>
-              <p className="text-xs font-bold text-foreground mb-2">البيانات التي سيتم قراءتها (قراءة فقط)</p>
-              <div className="space-y-2">
-                {[
-                  { icon: <Wallet className="w-4 h-4" />, label: "الراتب الشهري" },
-                  { icon: <FileText className="w-4 h-4" />, label: "الرصيد وكشف الحساب" },
-                  { icon: <Building2 className="w-4 h-4" />, label: "الالتزامات القائمة" },
-                  { icon: <Gauge className="w-4 h-4" />, label: "التصنيف الائتماني (سمة)" },
-                ].map(({ icon, label }) => (
-                  <div key={label} className="flex items-center gap-3 bg-muted rounded-xl px-3 py-2.5">
-                    <span className="w-8 h-8 rounded-lg bg-accent/15 text-accent flex items-center justify-center shrink-0">{icon}</span>
-                    <span className="text-sm font-medium text-foreground flex-1">{label}</span>
-                    <CheckCircle2 className="w-4 h-4 text-green-500" />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* 3) تأكيد الخصوصية بلمسة واحدة (Toggle) */}
-            <button
-              onClick={() => setReadConsent(v => !v)}
-              className={`w-full flex items-center gap-3 rounded-xl p-3 border-2 transition-all text-right ${
-                readConsent ? "border-green-500/50 bg-green-500/10" : "border-border bg-muted"
-              }`}
-            >
-              <span className={`relative w-10 h-6 rounded-full transition-colors shrink-0 ${readConsent ? "bg-green-500" : "bg-muted-foreground/30"}`}>
-                <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${readConsent ? "left-0.5" : "left-[18px]"}`} />
-              </span>
-              <span className="text-[11px] text-foreground leading-relaxed flex-1">
-                أوافق على منح <span className="font-bold">صلاحية قراءة</span> بياناتي المالية (قراءة فقط) لتقييم الأهلية
-              </span>
-            </button>
-
-            {/* شارة الامتثال لساما */}
-            <div className="flex items-start gap-2 bg-green-500/10 border border-green-500/30 rounded-xl p-3">
-              <Lock className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
-              <p className="text-[10px] text-muted-foreground leading-relaxed">
-                اتصال مشفّر عبر إطار المصرفية المفتوحة المرخّص من البنك المركزي السعودي (ساما). يمكنك سحب الإذن في أي وقت، ولا تُخزَّن بيانات الدخول.
-              </p>
-            </div>
-
-            <div className="flex gap-2">
-              <button
-                onClick={() => setObStatus("idle")}
-                className="flex-1 bg-muted text-foreground font-bold text-sm py-3 rounded-xl active:scale-95 transition-transform"
-              >
-                إلغاء
-              </button>
-              <button
-                onClick={startConnect}
-                disabled={selectedBanks.length === 0 || !readConsent}
-                className="flex-[2] bg-accent text-accent-foreground font-bold text-sm py-3 rounded-xl active:scale-95 transition-transform flex items-center justify-center gap-2 disabled:opacity-40 disabled:active:scale-100"
-              >
-                <ShieldCheck className="w-4 h-4" />
-                {selectedBanks.length > 1 ? `أوافق واربط (${selectedBanks.length} بنوك)` : "أوافق واربط الآن"}
-              </button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </MobileContainer>
   );
 }
