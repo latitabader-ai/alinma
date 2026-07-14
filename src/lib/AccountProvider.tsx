@@ -7,10 +7,12 @@ import { createContext, useContext, useState, ReactNode } from "react";
 // ============================================================
 
 interface AccountData {
-  balance: number;   // رصيد الحساب الجاري المعروض في الرئيسية
-  salary: number;    // الراتب الشهري (يُسحب عبر المصرفية المفتوحة)
-  oblig: number;     // الالتزامات الشهرية
-  statement: string; // ملخّص كشف الحساب
+  balance: number;      // رصيد الحساب الجاري المعروض في الرئيسية
+  salary: number;       // الراتب الشهري (يُسحب عبر المصرفية المفتوحة)
+  oblig: number;        // الالتزامات الشهرية
+  statement: string;    // ملخّص كشف الحساب
+  creditScore: number;  // التصنيف الائتماني (سمة)
+  accountMask: string;  // آخر أرقام الحساب (مقنّع)
 }
 
 interface AccountContextType extends AccountData {
@@ -23,6 +25,8 @@ const INITIAL: AccountData = {
   salary: 18500,
   oblig: 1800,
   statement: "12 شهراً · تدفقات منتظمة",
+  creditScore: 730,
+  accountMask: "•••• 6000",
 };
 
 const AccountContext = createContext<AccountContextType | undefined>(undefined);

@@ -1,10 +1,10 @@
 import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MobileContainer } from "@/components/MobileContainer";
-import { Plus, FileSearch, Calculator, UserSquare, Home as HomeIcon, Car, Users, GraduationCap, ChevronRight, ChevronLeft, AlertTriangle, TrendingDown, Zap, CheckCircle2, Loader2, Building2, FileText, Wallet, Clock, RefreshCw } from "lucide-react";
+import { Plus, FileSearch, Calculator, UserSquare, Home as HomeIcon, Car, Users, GraduationCap, ChevronRight, ChevronLeft, AlertTriangle, TrendingDown, CheckCircle2, Loader2, Building2, FileText, Wallet, Clock, RefreshCw, ShieldCheck, Lock, Landmark, Gauge } from "lucide-react";
 import { Link } from "wouter";
 import { Slider } from "@/components/ui/slider";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAccount } from "@/lib/AccountProvider";
 
 const MARGIN_RATE = 0.065;
@@ -38,17 +38,27 @@ function maxAllowedAmount(salary: number, oblig: number, months = 36) {
   return Math.floor(maxInstallment / factor / 1000) * 1000;
 }
 
-type ObStatus = "idle" | "loading" | "done";
+type ObStatus = "idle" | "consent" | "loading" | "done";
+
+// خطوات الربط الحيّة (Open Banking Hub)
+const OB_STEPS = [
+  "تأمين اتصال مشفّر مع مصرف الإنماء",
+  "التحقق من الهوية ومنح الإذن",
+  "جلب الراتب وكشف الحساب",
+  "تحليل الالتزامات القائمة",
+  "جلب التصنيف الائتماني (سمة)",
+];
 
 export default function FinanceAr() {
   // البيانات المتّسقة تُسحب من حالة الحساب المشتركة (لا قيماً عشوائية)
-  const { balance, salary: obSalary, oblig: obOblig, statement: obStatement } = useAccount();
-  const OB_DATA = { salary: obSalary, oblig: obOblig, statement: obStatement };
+  const { balance, salary: obSalary, oblig: obOblig, creditScore, accountMask } = useAccount();
+  const OB_DATA = { salary: obSalary, oblig: obOblig, credit: creditScore };
 
   const [showCalc, setShowCalc] = useState(false);
   const [showTracking, setShowTracking] = useState(false);
   const [obStatus, setObStatus] = useState<ObStatus>("idle");
-  const [verified, setVerified] = useState({ salary: false, statement: false, oblig: false });
+  const [verified, setVerified] = useState({ salary: false, statement: false, oblig: false, credit: false });
+  const [obStep, setObStep] = useState(0); // الخطوة الحالية في الربط الحيّ
 
   // نسبة التمويل المتحرّكة (تبدأ 0 ثم تتحرّك للقيمة الفعلية)
   const fundedPct = Math.round((ACTIVE_REQUEST.funded / ACTIVE_REQUEST.amount) * 100);
@@ -72,28 +82,27 @@ export default function FinanceAr() {
   const isOver = dbr > 0.45;
   const suggestedAmount = useMemo(() => maxAllowedAmount(salary, oblig, 36), [salary, oblig]);
 
+  // فتح نافذة الموافقة (Consent) — الخطوة الأولى في المصرفية المفتوحة
   function handleOpenBanking() {
-    if (obStatus !== "idle") return;
+    if (obStatus === "loading") return;
+    if (obStatus === "done") { setObStatus("idle"); setVerified({ salary: false, statement: false, oblig: false, credit: false }); return; }
+    setObStatus("consent");
+  }
+
+  // بعد موافقة المستخدم — يبدأ الربط الحيّ خطوة بخطوة
+  function startConnect() {
     setObStatus("loading");
-
-    // الخطوة 1: بعد 1.5 ثانية تظهر الراتب
-    setTimeout(() => {
-      setSalary(OB_DATA.salary);
-      setVerified(v => ({ ...v, salary: true }));
-    }, 1500);
-
-    // الخطوة 2: بعد 2.5 ثانية يظهر كشف الحساب
-    setTimeout(() => {
-      setVerified(v => ({ ...v, statement: true }));
-    }, 2500);
-
-    // الخطوة 3: بعد 3.5 ثانية تظهر الالتزامات
-    setTimeout(() => {
-      setOblig(OB_DATA.oblig);
-      setVerified(v => ({ ...v, oblig: true }));
-      setObStatus("done");
-      setShowCalc(true); // افتح الحاسبة تلقائياً
-    }, 3500);
+    setObStep(0);
+    const stepMs = 700;
+    OB_STEPS.forEach((_, i) => {
+      setTimeout(() => setObStep(i + 1), stepMs * (i + 1));
+      // مزامنة البيانات مع تقدّم الخطوات
+      if (i === 2) setTimeout(() => { setSalary(OB_DATA.salary); setVerified(v => ({ ...v, salary: true, statement: true })); }, stepMs * (i + 1));
+      if (i === 3) setTimeout(() => { setOblig(OB_DATA.oblig); setVerified(v => ({ ...v, oblig: true })); }, stepMs * (i + 1));
+      if (i === 4) setTimeout(() => { setVerified(v => ({ ...v, credit: true })); }, stepMs * (i + 1));
+    });
+    // إنهاء بعد آخر خطوة
+    setTimeout(() => { setObStatus("done"); setShowCalc(true); }, stepMs * (OB_STEPS.length + 1));
   }
 
   const inputClass = "w-full bg-muted border border-border rounded-xl px-3 py-2.5 text-foreground text-sm font-medium focus:outline-none focus:border-accent";
@@ -111,32 +120,31 @@ export default function FinanceAr() {
         <button
           onClick={handleOpenBanking}
           disabled={obStatus === "loading"}
-          className={`w-full mb-6 rounded-3xl p-5 flex items-center gap-4 text-right transition-all shadow-lg ${
+          className={`w-full mb-4 rounded-3xl p-5 flex items-center gap-4 text-right transition-all shadow-lg ${
             obStatus === "done"
               ? "bg-green-500/10 border-2 border-green-500/50"
               : "bg-gradient-to-br from-accent to-orange-500 border-2 border-accent active:scale-[0.98] shadow-accent/30"
           }`}
         >
-          {/* أيقونة داخل دائرة */}
           <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${
             obStatus === "done" ? "bg-green-500/20" : "bg-white/20"
           }`}>
             {obStatus === "loading" ? (
-              <Loader2 className={`w-7 h-7 animate-spin ${obStatus === "loading" ? "text-white" : ""}`} />
+              <Loader2 className="w-7 h-7 animate-spin text-white" />
             ) : obStatus === "done" ? (
-              <CheckCircle2 className="w-7 h-7 text-green-500" />
+              <ShieldCheck className="w-7 h-7 text-green-500" />
             ) : (
-              <Zap className="w-7 h-7 text-white fill-white" />
+              <Landmark className="w-7 h-7 text-white" />
             )}
           </div>
           <div className="flex-1 min-w-0">
             <p className={`text-base font-black ${obStatus === "done" ? "text-green-600 dark:text-green-400" : "text-white"}`}>
-              {obStatus === "done" ? "تم الربط بنجاح ✓" : "ربط سريع عبر المصرفية المفتوحة"}
+              {obStatus === "done" ? `متصل بمصرف الإنماء ${accountMask}` : "ربط سريع عبر المصرفية المفتوحة"}
             </p>
             <p className={`text-[11px] mt-1 leading-relaxed ${obStatus === "done" ? "text-muted-foreground" : "text-white/90"}`}>
-              {obStatus === "loading" ? "جارٍ جلب بياناتك المالية..." :
-               obStatus === "done" ? "بياناتك محدّثة تلقائياً" :
-               "جلب الراتب والرصيد والالتزامات تلقائياً · بدون إدخال يدوي"}
+              {obStatus === "loading" ? "جارٍ جلب بياناتك المالية بأمان..." :
+               obStatus === "done" ? "بياناتك محدّثة · اضغط لإعادة المزامنة" :
+               "جلب الراتب والرصيد والالتزامات والتصنيف الائتماني · بدون إدخال يدوي"}
             </p>
           </div>
           {obStatus === "idle" && (
@@ -145,43 +153,64 @@ export default function FinanceAr() {
               <ChevronLeft className="w-4 h-4" />
             </span>
           )}
+          {obStatus === "done" && <RefreshCw className="w-5 h-5 text-green-500 shrink-0" />}
         </button>
 
-        {/* بطاقات التحقق — Skeleton أثناء التحميل ثم بيانات محقّقة */}
-        {obStatus !== "idle" && (
-          <div className="grid grid-cols-3 gap-2 mb-6">
-            {[
-              { key: "salary" as const, icon: <Wallet className="w-4 h-4" />, label: "الراتب", value: `${OB_DATA.salary.toLocaleString()} ر.س` },
-              { key: "statement" as const, icon: <FileText className="w-4 h-4" />, label: "الرصيد", value: `${balance.toLocaleString()} ر.س` },
-              { key: "oblig" as const, icon: <Building2 className="w-4 h-4" />, label: "الالتزامات", value: `${OB_DATA.oblig.toLocaleString()} ر.س` },
-            ].map(({ key, icon, label, value }) => (
-              <div
-                key={key}
-                className={`rounded-xl p-3 border text-center transition-all duration-500 ${
-                  verified[key]
-                    ? "bg-green-500/10 border-green-500/40"
-                    : "bg-muted border-border"
-                }`}
-              >
-                {!verified[key] ? (
-                  // Skeleton loader أثناء انتظار التحقق
-                  <div className="flex flex-col items-center gap-1.5">
-                    <Skeleton className="w-4 h-4 rounded-full" />
-                    <Skeleton className="w-10 h-2 rounded" />
-                    <Skeleton className="w-12 h-2.5 rounded" />
+        {/* شارة أمان أسفل البطاقة (idle) */}
+        {obStatus === "idle" && (
+          <div className="flex items-center justify-center gap-3 mb-6 text-[10px] text-muted-foreground">
+            <span className="flex items-center gap-1"><Lock className="w-3 h-3" /> اتصال مشفّر</span>
+            <span className="w-1 h-1 rounded-full bg-muted-foreground/40" />
+            <span className="flex items-center gap-1"><ShieldCheck className="w-3 h-3" /> إطار المصرفية المفتوحة (ساما)</span>
+          </div>
+        )}
+
+        {/* ===== خطوات الربط الحيّة (أثناء التحميل) ===== */}
+        {obStatus === "loading" && (
+          <div className="bg-card border border-border rounded-2xl p-4 mb-6 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black text-foreground flex items-center gap-1.5"><Lock className="w-3.5 h-3.5 text-accent" /> جلسة مؤمّنة</span>
+              <span className="text-[10px] text-muted-foreground">{obStep}/{OB_STEPS.length}</span>
+            </div>
+            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+              <div className="h-full bg-accent rounded-full transition-all duration-500" style={{ width: `${(obStep / OB_STEPS.length) * 100}%` }} />
+            </div>
+            <div className="space-y-2 pt-1">
+              {OB_STEPS.map((label, i) => {
+                const done = obStep > i;
+                const active = obStep === i;
+                return (
+                  <div key={i} className={`flex items-center gap-2.5 text-xs transition-all ${done ? "text-foreground" : active ? "text-foreground" : "text-muted-foreground/50"}`}>
+                    {done ? <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
+                      : active ? <Loader2 className="w-4 h-4 text-accent animate-spin shrink-0" />
+                      : <div className="w-4 h-4 rounded-full border-2 border-muted-foreground/30 shrink-0" />}
+                    <span className={done || active ? "font-medium" : ""}>{label}</span>
                   </div>
-                ) : (
-                <>
-                <div className="flex justify-center mb-1">
-                  {verified[key]
-                    ? <CheckCircle2 className="w-4 h-4 text-green-500" />
-                    : <div className="text-muted-foreground">{icon}</div>
-                  }
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ===== البيانات المسحوبة (بعد الربط) — 4 بطاقات ===== */}
+        {obStatus === "done" && (
+          <div className="grid grid-cols-2 gap-2 mb-6">
+            {[
+              { key: "salary" as const, icon: <Wallet className="w-4 h-4" />, label: "الراتب الشهري", value: `${OB_DATA.salary.toLocaleString()} ر.س` },
+              { key: "statement" as const, icon: <FileText className="w-4 h-4" />, label: "الرصيد الجاري", value: `${balance.toLocaleString()} ر.س` },
+              { key: "oblig" as const, icon: <Building2 className="w-4 h-4" />, label: "الالتزامات", value: `${OB_DATA.oblig.toLocaleString()} ر.س` },
+              { key: "credit" as const, icon: <Gauge className="w-4 h-4" />, label: "التصنيف الائتماني (سمة)", value: `${OB_DATA.credit}` },
+            ].map(({ key, icon, label, value }) => (
+              <div key={key} className="rounded-xl p-3 border bg-green-500/10 border-green-500/40 flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-green-500/15 text-green-600 dark:text-green-400 flex items-center justify-center shrink-0">
+                  {icon}
                 </div>
-                <p className="text-[9px] text-muted-foreground font-medium">{label}</p>
-                <p className="text-[10px] font-black mt-0.5 text-foreground">{value}</p>
-                </>
-                )}
+                <div className="min-w-0 flex-1">
+                  <p className="text-[9px] text-muted-foreground font-medium flex items-center gap-1">
+                    {label} <CheckCircle2 className="w-2.5 h-2.5 text-green-500" />
+                  </p>
+                  <p className="text-sm font-black text-foreground truncate">{value}</p>
+                </div>
               </div>
             ))}
           </div>
@@ -484,6 +513,64 @@ export default function FinanceAr() {
           🔒 تُدار أموالك بأمان عبر مصرف الإنماء بالتوافق مع أنظمة البنك المركزي السعودي (ساما) ومبادئ التمويل الإسلامي.
         </p>
       </div>
+
+      {/* ===== نافذة الموافقة على المصرفية المفتوحة (Consent) ===== */}
+      <Dialog open={obStatus === "consent"} onOpenChange={(o) => { if (!o && obStatus === "consent") setObStatus("idle"); }}>
+        <DialogContent className="max-w-[350px] rounded-2xl" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="text-right flex items-center gap-2 text-foreground">
+              <span className="w-10 h-10 rounded-xl bg-accent/15 text-accent flex items-center justify-center">
+                <Landmark className="w-5 h-5" />
+              </span>
+              الربط عبر المصرفية المفتوحة
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="text-right space-y-4">
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              أنت على وشك منح <span className="font-bold text-foreground">مصرف الإنماء</span> إذناً آمناً بقراءة بياناتك المالية لتقييم أهليتك فوراً. البيانات التي سيتم الوصول إليها:
+            </p>
+
+            <div className="space-y-2">
+              {[
+                { icon: <Wallet className="w-4 h-4" />, label: "الراتب الشهري" },
+                { icon: <FileText className="w-4 h-4" />, label: "الرصيد وكشف الحساب" },
+                { icon: <Building2 className="w-4 h-4" />, label: "الالتزامات القائمة" },
+                { icon: <Gauge className="w-4 h-4" />, label: "التصنيف الائتماني (سمة)" },
+              ].map(({ icon, label }) => (
+                <div key={label} className="flex items-center gap-3 bg-muted rounded-xl px-3 py-2.5">
+                  <span className="w-8 h-8 rounded-lg bg-accent/15 text-accent flex items-center justify-center shrink-0">{icon}</span>
+                  <span className="text-sm font-medium text-foreground flex-1">{label}</span>
+                  <CheckCircle2 className="w-4 h-4 text-green-500" />
+                </div>
+              ))}
+            </div>
+
+            <div className="flex items-start gap-2 bg-green-500/10 border border-green-500/30 rounded-xl p-3">
+              <Lock className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
+              <p className="text-[10px] text-muted-foreground leading-relaxed">
+                اتصال مشفّر عبر إطار المصرفية المفتوحة المرخّص من البنك المركزي السعودي (ساما). يمكنك سحب الإذن في أي وقت، ولا تُخزَّن بيانات الدخول.
+              </p>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => setObStatus("idle")}
+                className="flex-1 bg-muted text-foreground font-bold text-sm py-3 rounded-xl active:scale-95 transition-transform"
+              >
+                إلغاء
+              </button>
+              <button
+                onClick={startConnect}
+                className="flex-[2] bg-accent text-accent-foreground font-bold text-sm py-3 rounded-xl active:scale-95 transition-transform flex items-center justify-center gap-2"
+              >
+                <ShieldCheck className="w-4 h-4" />
+                أوافق واربط الآن
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </MobileContainer>
   );
 }
