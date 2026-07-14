@@ -26,8 +26,9 @@ export interface AssessPayload {
   age?: number;
 }
 
-// عنوان الـ API (قابل للتهيئة عبر متغيّر بيئة عند النشر)
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
+// عنوان الـ API — الافتراضي هو خادم Render المستضاف (يعمل على الموقع الحيّ مباشرة).
+// للتطوير المحلي مقابل API محلي: اضبطي VITE_API_URL=http://localhost:8000 في ملف .env.local
+const API_BASE = import.meta.env.VITE_API_URL || "https://sharik-risk-api.onrender.com";
 
 // إيقاظ الخادم المجاني (Render يدخل سبات بعد الخمول) — نداء خفيف عند فتح الشاشة
 // حتى يكون النموذج جاهزاً بحلول وقت ضغط المستخدم على "قيّم".
