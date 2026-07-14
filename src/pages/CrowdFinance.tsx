@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MobileContainer } from "@/components/MobileContainer";
 import { ChevronRight, CheckCircle2, AlertTriangle, XCircle, Loader2, Cpu, WifiOff } from "lucide-react";
 import { Link } from "wouter";
-import { assessViaApi } from "@/lib/riskApi";
+import { assessViaApi, warmUpApi } from "@/lib/riskApi";
 
 type Tab = "apply" | "how";
 type RiskLevel = "low" | "mid" | "high" | null;
@@ -70,6 +70,9 @@ export default function CrowdFinance() {
   const [item, setItem]     = useState("سيارة");
   const [emp, setEmp]       = useState("حكومي");
   const [assessing, setAssessing] = useState(false);
+
+  // إيقاظ خادم النموذج مبكّراً ليكون جاهزاً عند التقييم
+  useEffect(() => { warmUpApi(); }, []);
 
   async function handleAssess() {
     setAssessing(true);

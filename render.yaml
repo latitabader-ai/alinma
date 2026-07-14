@@ -1,0 +1,19 @@
+# ============================================================
+#  Render Blueprint — استضافة API تقييم المخاطر (شارِك)
+#  يقرأه Render تلقائياً عند ربط المستودع (Blueprint).
+# ============================================================
+services:
+  - type: web
+    name: sharik-risk-api
+    runtime: python
+    rootDir: api                 # الخدمة تعمل من مجلد api/
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      # مسار البيانات: النموذج يُدرَّب من ml/tamweel_data.csv في جذر المستودع
+      - key: DATA_PATH
+        value: ../ml/tamweel_data.csv

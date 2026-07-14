@@ -29,9 +29,15 @@ export interface AssessPayload {
 // عنوان الـ API (قابل للتهيئة عبر متغيّر بيئة عند النشر)
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
+// إيقاظ الخادم المجاني (Render يدخل سبات بعد الخمول) — نداء خفيف عند فتح الشاشة
+// حتى يكون النموذج جاهزاً بحلول وقت ضغط المستخدم على "قيّم".
+export function warmUpApi(): void {
+  fetch(`${API_BASE}/health`, { method: "GET" }).catch(() => {});
+}
+
 export async function assessViaApi(payload: AssessPayload): Promise<ApiAssess> {
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 4000); // مهلة 4 ثوانٍ
+  const timer = setTimeout(() => ctrl.abort(), 8000); // مهلة 8 ثوانٍ (تحمّل بدء التشغيل)
   try {
     const res = await fetch(`${API_BASE}/assess`, {
       method: "POST",
