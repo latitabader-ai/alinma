@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MobileContainer } from "@/components/MobileContainer";
-import { ChevronRight, TrendingUp, Briefcase, Sprout, FileSignature, HandCoins, Clock, Car, Store, User, Wrench, Sparkles, Loader2, PieChart, ShieldCheck } from "lucide-react";
+import { ChevronRight, TrendingUp, Briefcase, Sprout, FileSignature, HandCoins, Clock, Car, Store, User, Wrench, Sparkles, Loader2, PieChart, ShieldCheck, Wallet } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
+import { useAccount } from "@/lib/AccountProvider";
 import { Slider } from "@/components/ui/slider";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -87,6 +88,7 @@ function smartAllocate(total: number, opps: Opp[]): Alloc[] {
 export default function Investments() {
   const [tab, setTab] = useState<Tab>("funding");
   const { toast } = useToast();
+  const { balance, withdraw } = useAccount();
 
   // مساهماتي الحالية (تتحدّث عند كل مساهمة)
   const [myContribs, setMyContribs] = useState<Contribution[]>(INITIAL_CONTRIBUTIONS);
@@ -122,15 +124,17 @@ export default function Investments() {
     setMyContribs(prev => addContribution(prev, {
       title: activeOpp.title, amount: contribAmt, retPct: activeOpp.retPct, level: activeOpp.level, status: "نشطة",
     }));
+    withdraw(contribAmt); // خصم من رصيد الحساب الجاري
     toast({
       title: "✅ تمت المساهمة بنجاح",
-      description: `ساهمت بـ ${contribAmt.toLocaleString()} ر.س في ${activeOpp.title} · عائد سنوي متوقّع ${annualReturn.toLocaleString()} ر.س`,
+      description: `ساهمت بـ ${contribAmt.toLocaleString()} ر.س في ${activeOpp.title} · خُصمت من رصيدك · عائد سنوي متوقّع ${annualReturn.toLocaleString()} ر.س`,
     });
     setActiveOpp(null);
   }
 
   const totalInvested = myContribs.reduce((s, c) => s + c.amount, 0);
-  const animatedTotal = useCountUp(totalInvested); // حركة تصاعدية للمبلغ الإجمالي
+  const animatedTotal = useCountUp(totalInvested);   // حركة تصاعدية للمبلغ المستثمر
+  const animatedBalance = useCountUp(balance);        // حركة للرصيد المتاح
   const avgRet = totalInvested ? (myContribs.reduce((s, c) => s + c.retPct * c.amount, 0) / totalInvested).toFixed(1) : "0";
 
   const allocAvgRet = allocations
@@ -153,9 +157,10 @@ export default function Investments() {
     setMyContribs(prev => allocations!.reduce((acc, a) => addContribution(acc, {
       title: a.opp.title, amount: a.amount, retPct: a.opp.retPct, level: a.opp.level, status: "نشطة",
     }), prev));
+    withdraw(total); // خصم إجمالي التوزيع من رصيد الحساب الجاري
     toast({
       title: "✅ تم توزيع استثمارك بنجاح",
-      description: `وُزِّع ${total.toLocaleString()} ر.س على ${allocations!.length} فرص بعائد متوقّع ${allocAvgRet}%`,
+      description: `وُزِّع ${total.toLocaleString()} ر.س على ${allocations!.length} فرص · خُصمت من رصيدك · عائد متوقّع ${allocAvgRet}%`,
     });
     setAllocations(null);
     setInvestAmt("10000");
@@ -222,7 +227,7 @@ export default function Investments() {
                   <HandCoins className="w-5 h-5 text-accent" />
                   <h3 className="font-black text-foreground text-sm">مساهماتي الحالية</h3>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between mb-3">
                   <div>
                     <p className="text-[10px] text-muted-foreground">إجمالي المستثمر</p>
                     <p className="text-lg font-black text-foreground tabular-nums">{animatedTotal.toLocaleString()} <span className="text-[10px] font-normal text-muted-foreground">ر.س</span></p>
@@ -231,6 +236,11 @@ export default function Investments() {
                     <p className="text-[10px] text-muted-foreground">متوسط العائد المتوقّع</p>
                     <p className="text-lg font-black text-accent">{avgRet}%</p>
                   </div>
+                </div>
+                {/* الرصيد المتاح — يتناقص عند المساهمة */}
+                <div className="flex items-center justify-between border-t border-border/50 pt-2.5">
+                  <span className="text-[10px] text-muted-foreground flex items-center gap-1"><Wallet className="w-3 h-3" /> الرصيد المتاح في الحساب الجاري</span>
+                  <span className="text-sm font-black text-foreground tabular-nums">{animatedBalance.toLocaleString()} ر.س</span>
                 </div>
               </div>
 

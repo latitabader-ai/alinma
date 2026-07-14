@@ -17,6 +17,8 @@ interface AccountData {
 
 interface AccountContextType extends AccountData {
   setBalance: (v: number) => void;
+  deposit: (amount: number) => void;   // إضافة للرصيد (قبول تمويل)
+  withdraw: (amount: number) => void;  // خصم من الرصيد (مساهمة / سداد)
 }
 
 // بيانات متّسقة — الراتب والالتزامات منطقيان بالنسبة للرصيد
@@ -34,9 +36,12 @@ const AccountContext = createContext<AccountContextType | undefined>(undefined);
 export function AccountProvider({ children }: { children: ReactNode }) {
   const [balance, setBalance] = useState(INITIAL.balance);
 
+  const deposit = (amount: number) => setBalance(b => b + Math.max(0, amount));
+  const withdraw = (amount: number) => setBalance(b => Math.max(0, b - Math.max(0, amount)));
+
   return (
     <AccountContext.Provider
-      value={{ ...INITIAL, balance, setBalance }}
+      value={{ ...INITIAL, balance, setBalance, deposit, withdraw }}
     >
       {children}
     </AccountContext.Provider>

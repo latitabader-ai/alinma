@@ -21,7 +21,7 @@ from pydantic import BaseModel, Field
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, precision_score, recall_score
 
 # مسار البيانات (قابل للتهيئة عبر متغيّر بيئة)
 DATA_PATH = os.environ.get(
@@ -72,7 +72,14 @@ class Engine:
             class_weight="balanced", random_state=42)
         self.model.fit(X_tr, y_tr)
 
-        self.accuracy = round(accuracy_score(y_te, self.model.predict(X_te)) * 100, 1)
+        y_pred = self.model.predict(X_te)
+        self.accuracy = round(accuracy_score(y_te, y_pred) * 100, 1)
+
+        # دقة التنبؤ (precision) واكتشاف (recall) لفئة الخطر المرتفع — الأهم لحماية المساهمين
+        high_idx = int(self.y_encoder.transform(["مرتفع"])[0])
+        self.high_precision = round(precision_score(y_te, y_pred, labels=[high_idx], average="micro", zero_division=0) * 100)
+        self.high_recall = round(recall_score(y_te, y_pred, labels=[high_idx], average="micro", zero_division=0) * 100)
+
         self.importances = sorted(
             [{"name": n, "value": round(v * 100, 1)}
              for n, v in zip(NUM_FEATURES + CAT_FEATURES, self.model.feature_importances_)],
@@ -156,5 +163,7 @@ def assess(req: AssessRequest):
         "installment": round(installment),
         "dbr": round(dbr, 3),
         "modelAccuracy": engine.accuracy,
+        "highRiskPrecision": engine.high_precision,
+        "highRiskRecall": engine.high_recall,
         "importances": engine.importances,
     }

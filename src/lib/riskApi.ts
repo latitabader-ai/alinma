@@ -10,7 +10,9 @@ export interface ApiAssess {
   confidence: number;      // ثقة التنبؤ %
   installment: number;
   dbr: number;
-  modelAccuracy: number;   // دقة النموذج على بيانات الاختبار %
+  modelAccuracy: number;        // الدقة الإجمالية %
+  highRiskPrecision?: number;   // دقة التنبؤ بالحالات المرتفعة الخطورة %
+  highRiskRecall?: number;      // نسبة اكتشاف الحالات المرتفعة %
   importances: { name: string; value: number }[];
 }
 

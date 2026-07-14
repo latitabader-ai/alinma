@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { MobileContainer } from "@/components/MobileContainer";
-import { ChevronRight, CheckCircle2, AlertTriangle, XCircle, Loader2, Cpu, WifiOff } from "lucide-react";
+import { ChevronRight, CheckCircle2, AlertTriangle, XCircle, Loader2, Cpu, WifiOff, Landmark, Lock } from "lucide-react";
 import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAccount } from "@/lib/AccountProvider";
 import { assessViaApi, warmUpApi } from "@/lib/riskApi";
 
 type Tab = "apply" | "how";
@@ -17,7 +18,8 @@ interface AssessResult {
   decision: string;
   factors: { name: string; val: number; max: number }[];
   source: "api" | "local";              // مصدر التقييم: نموذج حقيقي أم منطق محلي
-  modelAccuracy?: number;                // دقة النموذج (عند المصدر api)
+  modelAccuracy?: number;                // الدقة الإجمالية (عند المصدر api)
+  highRiskPrecision?: number;            // دقة التنبؤ بالحالات المرتفعة الخطورة
   importances?: { name: string; value: number }[]; // أوزان عوامل النموذج
 }
 
@@ -72,6 +74,23 @@ export default function CrowdFinance() {
   const [emp, setEmp]       = useState("حكومي");
   const [assessing, setAssessing] = useState(false);
 
+  // المصرفية المفتوحة — تعبئة تلقائية للحقول (مع إبقاء التعديل اليدوي)
+  const { salary: obSalary, oblig: obOblig, creditScore } = useAccount();
+  const [obFilling, setObFilling] = useState(false);
+  const [obFilled, setObFilled] = useState(false);
+  function fillFromOpenBanking() {
+    if (obFilling) return;
+    setObFilling(true);
+    setTimeout(() => {
+      setSalary(String(obSalary));
+      setOblig(String(obOblig));
+      setCredit(String(creditScore));
+      setTenure("48");
+      setObFilling(false);
+      setObFilled(true);
+    }, 1600);
+  }
+
   // إيقاظ خادم النموذج مبكّراً ليكون جاهزاً عند التقييم
   useEffect(() => { warmUpApi(); }, []);
 
@@ -94,6 +113,7 @@ export default function CrowdFinance() {
         factors: [],
         source: "api",
         modelAccuracy: api.modelAccuracy,
+        highRiskPrecision: api.highRiskPrecision,
         importances: api.importances,
       });
     } catch {
@@ -143,7 +163,30 @@ export default function CrowdFinance() {
               <div className="inline-flex items-center gap-2 bg-green-500/10 text-green-600 dark:text-green-400 text-xs font-bold px-3 py-1.5 rounded-full border border-green-500/30">
                 <CheckCircle2 className="w-3.5 h-3.5" />تمويل متوافق مع الشريعة (مرابحة)
               </div>
-              <p className="text-muted-foreground text-sm leading-relaxed">أدخل بياناتك، وسيقيّم محرّك الذكاء الاصطناعي أهليتك ومستوى المخاطرة فوراً.</p>
+              <p className="text-muted-foreground text-sm leading-relaxed">املأ بياناتك تلقائياً عبر المصرفية المفتوحة، أو أدخلها يدوياً — وسيقيّم محرّك الذكاء الاصطناعي أهليتك فوراً.</p>
+
+              {/* زر المصرفية المفتوحة — تعبئة تلقائية (مع إبقاء الإدخال اليدوي) */}
+              <button
+                onClick={fillFromOpenBanking}
+                disabled={obFilling}
+                className={`w-full rounded-2xl p-3.5 flex items-center gap-3 transition-all border-2 ${
+                  obFilled ? "bg-green-500/10 border-green-500/50" : "bg-gradient-to-l from-accent/20 to-accent/5 border-accent/60 active:scale-[0.98]"
+                }`}
+              >
+                <span className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${obFilled ? "bg-green-500/20" : "bg-accent/20"}`}>
+                  {obFilling ? <Loader2 className="w-5 h-5 text-accent animate-spin" /> : obFilled ? <CheckCircle2 className="w-5 h-5 text-green-500" /> : <Landmark className="w-5 h-5 text-accent" />}
+                </span>
+                <div className="text-right flex-1">
+                  <p className={`text-sm font-black ${obFilled ? "text-green-600 dark:text-green-400" : "text-foreground"}`}>
+                    {obFilling ? "جارٍ جلب بياناتك..." : obFilled ? "تم ملء البيانات تلقائياً ✓" : "املأ عبر المصرفية المفتوحة"}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1">
+                    <Lock className="w-2.5 h-2.5" /> {obFilled ? "يمكنك تعديل أي حقل يدوياً" : "الراتب والالتزامات والتصنيف الائتماني · بلمسة"}
+                  </p>
+                </div>
+                {!obFilled && !obFilling && <span className="text-[10px] font-bold text-accent border border-accent/40 px-2 py-1 rounded-full shrink-0">ربط</span>}
+              </button>
+
               <div className="space-y-3">
                 <div>
                   <label className="block text-xs text-muted-foreground font-bold mb-1.5">نوع السلعة المطلوبة</label>
@@ -210,7 +253,7 @@ export default function CrowdFinance() {
                   <div className="flex justify-end mb-2">
                     {result.source === "api" ? (
                       <span className="inline-flex items-center gap-1 text-[10px] font-bold text-green-700 dark:text-green-400 bg-green-500/15 px-2 py-1 rounded-full">
-                        <Cpu className="w-3 h-3" /> نموذج Random Forest حقيقي · دقة {result.modelAccuracy}%
+                        <Cpu className="w-3 h-3" /> نموذج Random Forest حقيقي
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 text-[10px] font-bold text-muted-foreground bg-muted px-2 py-1 rounded-full">
@@ -218,6 +261,20 @@ export default function CrowdFinance() {
                       </span>
                     )}
                   </div>
+
+                  {/* مقاييس أداء النموذج — نُبرز دقة اكتشاف الحالات المرتفعة (الأهم لحماية المساهمين) */}
+                  {result.source === "api" && (
+                    <div className="grid grid-cols-2 gap-2 mb-3">
+                      <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-2.5 text-center">
+                        <p className="text-lg font-black text-green-600 dark:text-green-400">{result.highRiskPrecision ?? "—"}%</p>
+                        <p className="text-[9px] text-muted-foreground leading-tight mt-0.5">دقة التنبؤ بالحالات<br/>مرتفعة الخطورة</p>
+                      </div>
+                      <div className="bg-muted border border-border rounded-xl p-2.5 text-center">
+                        <p className="text-lg font-black text-foreground">{result.modelAccuracy}%</p>
+                        <p className="text-[9px] text-muted-foreground leading-tight mt-0.5">الدقة الإجمالية<br/>(3 مستويات خطر)</p>
+                      </div>
+                    </div>
+                  )}
                   <div className="flex items-center gap-3 mb-3">
                     {result.level==="low"  && <CheckCircle2 className="w-8 h-8 text-green-500 shrink-0"/>}
                     {result.level==="mid"  && <AlertTriangle className="w-8 h-8 text-amber-500 shrink-0"/>}
