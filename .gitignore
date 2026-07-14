@@ -7,3 +7,9 @@ dist/
 # أدوات محلية / بيئات خارجية — لا مكان لها في المستودع
 .claude/
 .replit-artifact/
+
+# Python / API
+__pycache__/
+*.pyc
+api/server.log
+.env

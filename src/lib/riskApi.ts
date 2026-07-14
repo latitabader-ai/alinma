@@ -1,0 +1,47 @@
+// ============================================================
+//  riskApi — الاتصال بـ API تقييم المخاطر الحقيقي (FastAPI)
+//  يخدم نموذج Random Forest. عند تعذّر الاتصال تعود الواجهة
+//  للمنطق المحلي (fallback) حتى يعمل العرض دائماً.
+// ============================================================
+
+export interface ApiAssess {
+  level: "low" | "mid" | "high";
+  levelText: string;
+  confidence: number;      // ثقة التنبؤ %
+  installment: number;
+  dbr: number;
+  modelAccuracy: number;   // دقة النموذج على بيانات الاختبار %
+  importances: { name: string; value: number }[];
+}
+
+export interface AssessPayload {
+  item: string;
+  amount: number;
+  term: number;
+  salary: number;
+  oblig: number;
+  credit: number;
+  tenure: number;
+  emp: string;
+  age?: number;
+}
+
+// عنوان الـ API (قابل للتهيئة عبر متغيّر بيئة عند النشر)
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
+export async function assessViaApi(payload: AssessPayload): Promise<ApiAssess> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 4000); // مهلة 4 ثوانٍ
+  try {
+    const res = await fetch(`${API_BASE}/assess`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal: ctrl.signal,
+    });
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    return (await res.json()) as ApiAssess;
+  } finally {
+    clearTimeout(timer);
+  }
+}

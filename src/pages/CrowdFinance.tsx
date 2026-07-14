@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { MobileContainer } from "@/components/MobileContainer";
-import { ChevronRight, CheckCircle2, AlertTriangle, XCircle } from "lucide-react";
+import { ChevronRight, CheckCircle2, AlertTriangle, XCircle, Loader2, Cpu, WifiOff } from "lucide-react";
 import { Link } from "wouter";
+import { assessViaApi } from "@/lib/riskApi";
 
 type Tab = "apply" | "how";
 type RiskLevel = "low" | "mid" | "high" | null;
@@ -14,6 +15,17 @@ interface AssessResult {
   dbr: number;
   decision: string;
   factors: { name: string; val: number; max: number }[];
+  source: "api" | "local";              // مصدر التقييم: نموذج حقيقي أم منطق محلي
+  modelAccuracy?: number;                // دقة النموذج (عند المصدر api)
+  importances?: { name: string; value: number }[]; // أوزان عوامل النموذج
+}
+
+// نص القرار بحسب مستوى الخطر (يُستخدم عند مسار الـ API)
+function decisionFor(level: "low" | "mid" | "high", dbr: number): string {
+  if (level === "high" && dbr > 0.45) return "نسبة عبء الدين تتجاوز 45% — لا يمكن قبول الطلب.";
+  if (level === "high") return "يحتاج ضمانات إضافية أو تخفيض المبلغ قبل القبول.";
+  if (level === "mid") return "مقبول بشروط — يُطرح للمساهمين مع تنويع أوسع.";
+  return "مقبول — يُطرح للمساهمين كفرصة تمويل موثّقة.";
 }
 
 function assess(amount: number, term: number, salary: number, oblig: number, credit: number, tenure: number, emp: string): AssessResult {
@@ -41,7 +53,7 @@ function assess(amount: number, term: number, salary: number, oblig: number, cre
   else if (score >= 20) { level = "mid";  levelText = "خطر متوسط"; decision = "مقبول بشروط — يُطرح للمساهمين مع تنويع أوسع."; conf = "ثقة التقييم: متوسطة"; }
   else               { level = "low";  levelText = "خطر منخفض"; decision = "مقبول — يُطرح للمساهمين كفرصة تمويل موثّقة."; conf = "ثقة التقييم: عالية"; }
 
-  return { level, levelText, conf, installment, dbr, decision, factors };
+  return { level, levelText, conf, installment, dbr, decision, factors, source: "local" };
 }
 
 export default function CrowdFinance() {
@@ -57,8 +69,36 @@ export default function CrowdFinance() {
   const [tenure, setTenure] = useState("36");
   const [item, setItem]     = useState("سيارة");
   const [emp, setEmp]       = useState("حكومي");
+  const [assessing, setAssessing] = useState(false);
 
-  function handleAssess() { setResult(assess(+amount, +term, +salary, +oblig, +credit, +tenure, emp)); }
+  async function handleAssess() {
+    setAssessing(true);
+    try {
+      // نحاول أولاً محرّك التقييم الحقيقي (API + نموذج Random Forest)
+      const api = await assessViaApi({
+        item, amount: +amount, term: +term, salary: +salary,
+        oblig: +oblig, credit: +credit, tenure: +tenure, emp,
+      });
+      setResult({
+        level: api.level,
+        levelText: api.levelText === "مرتفع" || api.levelText === "متوسط" || api.levelText === "منخفض"
+          ? `خطر ${api.levelText}` : api.levelText,
+        conf: `ثقة النموذج: ${api.confidence}%`,
+        installment: api.installment,
+        dbr: api.dbr,
+        decision: decisionFor(api.level, api.dbr),
+        factors: [],
+        source: "api",
+        modelAccuracy: api.modelAccuracy,
+        importances: api.importances,
+      });
+    } catch {
+      // تعذّر الاتصال — نعود للمنطق المحلي حتى يعمل العرض دائماً
+      setResult(assess(+amount, +term, +salary, +oblig, +credit, +tenure, emp));
+    } finally {
+      setAssessing(false);
+    }
+  }
 
   const LC = {
     low:  { bg: "bg-green-500/10", border: "border-green-500/50", text: "text-green-600 dark:text-green-400", bar: "bg-green-500", badge: "bg-green-500/15 text-green-700 dark:text-green-400", dot: "bg-green-500" },
@@ -130,11 +170,25 @@ export default function CrowdFinance() {
                   <select value={emp} onChange={e=>setEmp(e.target.value)} className={inputClass}>
                     {["حكومي","شركة كبرى","شركة متوسطة","قطاع خاص صغير","أعمال حرة"].map(v=><option key={v}>{v}</option>)}</select></div>
               </div>
-              <button onClick={handleAssess} className="w-full bg-accent text-accent-foreground font-bold text-base py-4 rounded-2xl shadow-lg active:scale-95 transition-transform">
-                قيّم طلبي الآن
+              <button onClick={handleAssess} disabled={assessing}
+                className="w-full bg-accent text-accent-foreground font-bold text-base py-4 rounded-2xl shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2 disabled:opacity-70">
+                {assessing && <Loader2 className="w-5 h-5 animate-spin" />}
+                {assessing ? "جارٍ التقييم عبر النموذج..." : "قيّم طلبي الآن"}
               </button>
               {result && (
                 <div className={`rounded-2xl p-5 border ${LC[result.level!].bg} ${LC[result.level!].border}`}>
+                  {/* شارة مصدر التقييم */}
+                  <div className="flex justify-end mb-2">
+                    {result.source === "api" ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-green-700 dark:text-green-400 bg-green-500/15 px-2 py-1 rounded-full">
+                        <Cpu className="w-3 h-3" /> نموذج Random Forest حقيقي · دقة {result.modelAccuracy}%
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-muted-foreground bg-muted px-2 py-1 rounded-full">
+                        <WifiOff className="w-3 h-3" /> تقييم محلي (API غير متصل)
+                      </span>
+                    )}
+                  </div>
                   <div className="flex items-center gap-3 mb-3">
                     {result.level==="low"  && <CheckCircle2 className="w-8 h-8 text-green-500 shrink-0"/>}
                     {result.level==="mid"  && <AlertTriangle className="w-8 h-8 text-amber-500 shrink-0"/>}
@@ -148,27 +202,48 @@ export default function CrowdFinance() {
                     القسط الشهري: <span className="text-foreground font-bold">{Math.round(result.installment).toLocaleString()} ريال</span>
                     {" · "}نسبة عبء الدين: <span className="text-foreground font-bold">{(result.dbr*100).toFixed(0)}%</span>
                   </p>
-                  <div className="space-y-2 mb-4">
-                    {result.factors.map(f=>{
-                      const pct=f.max?(f.val/f.max)*100:0;
-                      const barColor=f.val===0?"bg-green-500":pct>50?"bg-red-500":"bg-amber-500";
-                      return(
+
+                  {/* عوامل النموذج الحقيقي (importances) */}
+                  {result.source === "api" && result.importances && (
+                    <div className="space-y-2 mb-4">
+                      <p className="text-[11px] font-bold text-muted-foreground mb-1">أهم العوامل التي يعتمدها النموذج:</p>
+                      {result.importances.slice(0, 5).map(f => (
                         <div key={f.name} className="flex items-center gap-2">
-                          <span className="text-[11px] text-muted-foreground w-28 shrink-0">{f.name}</span>
+                          <span className="text-[11px] text-muted-foreground w-28 shrink-0">{f.name.replace(/_/g, " ")}</span>
                           <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                            <div className={`h-full rounded-full ${barColor} transition-all`} style={{width:`${pct}%`}}/>
+                            <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${Math.min(f.value / 30 * 100, 100)}%` }} />
                           </div>
-                          <span className={`text-[11px] font-bold w-6 text-left ${f.val===0?"text-green-500":"text-foreground"}`}>{f.val===0?"✓":`+${f.val}`}</span>
+                          <span className="text-[11px] font-bold w-9 text-left text-foreground">{f.value}%</span>
                         </div>
-                      );
-                    })}
-                  </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* عوامل المنطق المحلي (fallback) */}
+                  {result.source === "local" && (
+                    <div className="space-y-2 mb-4">
+                      {result.factors.map(f=>{
+                        const pct=f.max?(f.val/f.max)*100:0;
+                        const barColor=f.val===0?"bg-green-500":pct>50?"bg-red-500":"bg-amber-500";
+                        return(
+                          <div key={f.name} className="flex items-center gap-2">
+                            <span className="text-[11px] text-muted-foreground w-28 shrink-0">{f.name}</span>
+                            <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                              <div className={`h-full rounded-full ${barColor} transition-all`} style={{width:`${pct}%`}}/>
+                            </div>
+                            <span className={`text-[11px] font-bold w-6 text-left ${f.val===0?"text-green-500":"text-foreground"}`}>{f.val===0?"✓":`+${f.val}`}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
                   <div className={`rounded-xl px-4 py-3 text-sm font-bold text-white ${result.level==="low"?"bg-green-500":result.level==="mid"?"bg-amber-500":"bg-red-500"}`}>
                     {result.decision}
                   </div>
                 </div>
               )}
-              <p className="text-center text-[10px] text-muted-foreground leading-relaxed">القرار يحاكي نموذج تصنيف مدرّب على معايير المخاطر السعودية</p>
+              <p className="text-center text-[10px] text-muted-foreground leading-relaxed">التقييم عبر نموذج Random Forest حقيقي مدرّب على معايير المخاطر السعودية (مع تقييم محلي احتياطي)</p>
             </div>
           )}
 
