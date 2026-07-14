@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { MobileContainer } from "@/components/MobileContainer";
 import { ChevronRight, CheckCircle2, AlertTriangle, XCircle, Loader2, Cpu, WifiOff } from "lucide-react";
 import { Link } from "wouter";
+import { Skeleton } from "@/components/ui/skeleton";
 import { assessViaApi, warmUpApi } from "@/lib/riskApi";
 
 type Tab = "apply" | "how";
@@ -178,7 +179,32 @@ export default function CrowdFinance() {
                 {assessing && <Loader2 className="w-5 h-5 animate-spin" />}
                 {assessing ? "جارٍ التقييم عبر النموذج..." : "قيّم طلبي الآن"}
               </button>
-              {result && (
+
+              {/* Skeleton أثناء استدعاء النموذج (API) */}
+              {assessing && (
+                <div className="rounded-2xl p-5 border border-border bg-card space-y-4">
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="w-8 h-8 rounded-full" />
+                    <div className="flex-1 space-y-1.5">
+                      <Skeleton className="w-32 h-4 rounded" />
+                      <Skeleton className="w-24 h-3 rounded" />
+                    </div>
+                  </div>
+                  <Skeleton className="w-full h-3 rounded" />
+                  <div className="space-y-2">
+                    {[0, 1, 2, 3, 4].map(i => (
+                      <div key={i} className="flex items-center gap-2">
+                        <Skeleton className="w-24 h-2.5 rounded shrink-0" />
+                        <Skeleton className="flex-1 h-1.5 rounded-full" />
+                        <Skeleton className="w-8 h-2.5 rounded shrink-0" />
+                      </div>
+                    ))}
+                  </div>
+                  <Skeleton className="w-full h-10 rounded-xl" />
+                </div>
+              )}
+
+              {!assessing && result && (
                 <div className={`rounded-2xl p-5 border ${LC[result.level!].bg} ${LC[result.level!].border}`}>
                   {/* شارة مصدر التقييم */}
                   <div className="flex justify-end mb-2">

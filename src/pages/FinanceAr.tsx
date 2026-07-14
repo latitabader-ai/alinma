@@ -42,11 +42,19 @@ type ObStatus = "idle" | "consent" | "loading" | "done";
 
 // خطوات الربط الحيّة (Open Banking Hub)
 const OB_STEPS = [
-  "تأمين اتصال مشفّر مع مصرف الإنماء",
+  "تأمين اتصال مشفّر مع البنوك المختارة",
   "التحقق من الهوية ومنح الإذن",
   "جلب الراتب وكشف الحساب",
   "تحليل الالتزامات القائمة",
   "جلب التصنيف الائتماني (سمة)",
+];
+
+// البنوك المتاحة للربط عبر المصرفية المفتوحة (SAMA Open Banking)
+const OB_BANKS = [
+  { id: "alinma",  name: "مصرف الإنماء", short: "الإنماء", color: "bg-accent",       primary: true },
+  { id: "rajhi",   name: "مصرف الراجحي", short: "الراجحي", color: "bg-blue-600",     primary: false },
+  { id: "snb",     name: "البنك الأهلي السعودي", short: "الأهلي", color: "bg-emerald-600", primary: false },
+  { id: "riyad",   name: "بنك الرياض",   short: "الرياض", color: "bg-indigo-600",    primary: false },
 ];
 
 export default function FinanceAr() {
@@ -59,6 +67,13 @@ export default function FinanceAr() {
   const [obStatus, setObStatus] = useState<ObStatus>("idle");
   const [verified, setVerified] = useState({ salary: false, statement: false, oblig: false, credit: false });
   const [obStep, setObStep] = useState(0); // الخطوة الحالية في الربط الحيّ
+
+  // إدارة الموافقات: البنوك المختارة + إذن القراءة (SAMA)
+  const [selectedBanks, setSelectedBanks] = useState<string[]>(["alinma"]);
+  const [readConsent, setReadConsent] = useState(false);
+  function toggleBank(id: string) {
+    setSelectedBanks(prev => prev.includes(id) ? prev.filter(b => b !== id) : [...prev, id]);
+  }
 
   // نسبة التمويل المتحرّكة (تبدأ 0 ثم تتحرّك للقيمة الفعلية)
   const fundedPct = Math.round((ACTIVE_REQUEST.funded / ACTIVE_REQUEST.amount) * 100);
@@ -418,18 +433,60 @@ export default function FinanceAr() {
               </div>
             </div>
 
-            {/* شريط DBR */}
-            <div>
-              <div className="h-2 bg-muted rounded-full overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all duration-500 ${isOver ? "bg-red-500" : dbrPct > 33 ? "bg-amber-500" : "bg-green-500"}`}
-                  style={{ width: `${Math.min(dbrPct / 45 * 100, 100)}%` }}
-                />
+            {/* ===== مؤشّر التدفّق النقدي التفاعلي (Cash-Flow Visualization) ===== */}
+            <div className="bg-muted/50 rounded-2xl p-4 border border-border">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-black text-foreground">توزيع الدخل الشهري</span>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isOver ? "bg-red-500/15 text-red-600 dark:text-red-400" : "bg-green-500/15 text-green-600 dark:text-green-400"}`}>
+                  {isOver ? "تجاوز حد 45%" : "ضمن الحد الآمن"}
+                </span>
               </div>
-              <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
-                <span>0%</span>
-                <span className="text-red-500 font-bold">حد ساما 45%</span>
-              </div>
+
+              {(() => {
+                const obligPct = Math.min((oblig / salary) * 100, 100);
+                const instPct = Math.min((installment / salary) * 100, 100 - obligPct);
+                const freePct = Math.max(100 - obligPct - instPct, 0);
+                const disposable = Math.max(salary - oblig - installment, 0);
+                return (
+                  <>
+                    {/* الشريط المجزّأ + علامة حد 45% */}
+                    <div dir="ltr" className="relative h-5 bg-background rounded-lg overflow-hidden flex">
+                      <div className="h-full bg-amber-500 transition-all duration-500" style={{ width: `${obligPct}%` }} />
+                      <div className={`h-full transition-all duration-500 ${isOver ? "bg-red-500" : "bg-accent"}`} style={{ width: `${instPct}%` }} />
+                      <div className="h-full bg-green-500/40 transition-all duration-500" style={{ width: `${freePct}%` }} />
+                      {/* خط حد ساما 45% */}
+                      <div className="absolute top-[-2px] bottom-[-2px] w-0.5 bg-red-600" style={{ left: "45%" }}>
+                        <span className="absolute -top-4 -translate-x-1/2 text-[8px] font-black text-red-600 whitespace-nowrap">حد 45%</span>
+                      </div>
+                    </div>
+
+                    {/* مفتاح الألوان + القيم */}
+                    <div className="grid grid-cols-3 gap-2 mt-4">
+                      <div className="text-center">
+                        <div className="flex items-center justify-center gap-1 mb-0.5">
+                          <span className="w-2 h-2 rounded-full bg-amber-500" />
+                          <span className="text-[9px] text-muted-foreground">الالتزامات</span>
+                        </div>
+                        <p className="text-xs font-black text-foreground">{oblig.toLocaleString()}</p>
+                      </div>
+                      <div className="text-center">
+                        <div className="flex items-center justify-center gap-1 mb-0.5">
+                          <span className={`w-2 h-2 rounded-full ${isOver ? "bg-red-500" : "bg-accent"}`} />
+                          <span className="text-[9px] text-muted-foreground">القسط الجديد</span>
+                        </div>
+                        <p className="text-xs font-black text-foreground">{Math.round(installment).toLocaleString()}</p>
+                      </div>
+                      <div className="text-center">
+                        <div className="flex items-center justify-center gap-1 mb-0.5">
+                          <span className="w-2 h-2 rounded-full bg-green-500/60" />
+                          <span className="text-[9px] text-muted-foreground">المتبقّي المتاح</span>
+                        </div>
+                        <p className="text-xs font-black text-foreground">{disposable.toLocaleString()}</p>
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
             </div>
 
             {/* بطاقة التوصية */}
@@ -526,26 +583,69 @@ export default function FinanceAr() {
             </DialogTitle>
           </DialogHeader>
 
-          <div className="text-right space-y-4">
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              أنت على وشك منح <span className="font-bold text-foreground">مصرف الإنماء</span> إذناً آمناً بقراءة بياناتك المالية لتقييم أهليتك فوراً. البيانات التي سيتم الوصول إليها:
-            </p>
-
-            <div className="space-y-2">
-              {[
-                { icon: <Wallet className="w-4 h-4" />, label: "الراتب الشهري" },
-                { icon: <FileText className="w-4 h-4" />, label: "الرصيد وكشف الحساب" },
-                { icon: <Building2 className="w-4 h-4" />, label: "الالتزامات القائمة" },
-                { icon: <Gauge className="w-4 h-4" />, label: "التصنيف الائتماني (سمة)" },
-              ].map(({ icon, label }) => (
-                <div key={label} className="flex items-center gap-3 bg-muted rounded-xl px-3 py-2.5">
-                  <span className="w-8 h-8 rounded-lg bg-accent/15 text-accent flex items-center justify-center shrink-0">{icon}</span>
-                  <span className="text-sm font-medium text-foreground flex-1">{label}</span>
-                  <CheckCircle2 className="w-4 h-4 text-green-500" />
-                </div>
-              ))}
+          <div className="text-right space-y-4 max-h-[65vh] overflow-y-auto pl-1">
+            {/* 1) اختيار البنوك للربط */}
+            <div>
+              <p className="text-xs font-bold text-foreground mb-2">اختر البنوك التي تريد ربطها</p>
+              <div className="grid grid-cols-2 gap-2">
+                {OB_BANKS.map(bank => {
+                  const on = selectedBanks.includes(bank.id);
+                  return (
+                    <button
+                      key={bank.id}
+                      onClick={() => toggleBank(bank.id)}
+                      className={`relative flex items-center gap-2 rounded-xl p-2.5 border-2 text-right transition-all ${
+                        on ? "border-accent bg-accent/10" : "border-border bg-muted"
+                      }`}
+                    >
+                      <span className={`w-8 h-8 rounded-lg ${bank.color} text-white flex items-center justify-center text-xs font-black shrink-0`}>
+                        {bank.short.charAt(0)}
+                      </span>
+                      <span className="text-[11px] font-bold text-foreground leading-tight flex-1">{bank.short}</span>
+                      <span className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 ${on ? "bg-accent" : "border-2 border-muted-foreground/30"}`}>
+                        {on && <CheckCircle2 className="w-4 h-4 text-white" />}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
+            {/* 2) البيانات التي ستُقرأ */}
+            <div>
+              <p className="text-xs font-bold text-foreground mb-2">البيانات التي سيتم قراءتها (قراءة فقط)</p>
+              <div className="space-y-2">
+                {[
+                  { icon: <Wallet className="w-4 h-4" />, label: "الراتب الشهري" },
+                  { icon: <FileText className="w-4 h-4" />, label: "الرصيد وكشف الحساب" },
+                  { icon: <Building2 className="w-4 h-4" />, label: "الالتزامات القائمة" },
+                  { icon: <Gauge className="w-4 h-4" />, label: "التصنيف الائتماني (سمة)" },
+                ].map(({ icon, label }) => (
+                  <div key={label} className="flex items-center gap-3 bg-muted rounded-xl px-3 py-2.5">
+                    <span className="w-8 h-8 rounded-lg bg-accent/15 text-accent flex items-center justify-center shrink-0">{icon}</span>
+                    <span className="text-sm font-medium text-foreground flex-1">{label}</span>
+                    <CheckCircle2 className="w-4 h-4 text-green-500" />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 3) تأكيد الخصوصية بلمسة واحدة (Toggle) */}
+            <button
+              onClick={() => setReadConsent(v => !v)}
+              className={`w-full flex items-center gap-3 rounded-xl p-3 border-2 transition-all text-right ${
+                readConsent ? "border-green-500/50 bg-green-500/10" : "border-border bg-muted"
+              }`}
+            >
+              <span className={`relative w-10 h-6 rounded-full transition-colors shrink-0 ${readConsent ? "bg-green-500" : "bg-muted-foreground/30"}`}>
+                <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${readConsent ? "left-0.5" : "left-[18px]"}`} />
+              </span>
+              <span className="text-[11px] text-foreground leading-relaxed flex-1">
+                أوافق على منح <span className="font-bold">صلاحية قراءة</span> بياناتي المالية (قراءة فقط) لتقييم الأهلية
+              </span>
+            </button>
+
+            {/* شارة الامتثال لساما */}
             <div className="flex items-start gap-2 bg-green-500/10 border border-green-500/30 rounded-xl p-3">
               <Lock className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
               <p className="text-[10px] text-muted-foreground leading-relaxed">
@@ -562,10 +662,11 @@ export default function FinanceAr() {
               </button>
               <button
                 onClick={startConnect}
-                className="flex-[2] bg-accent text-accent-foreground font-bold text-sm py-3 rounded-xl active:scale-95 transition-transform flex items-center justify-center gap-2"
+                disabled={selectedBanks.length === 0 || !readConsent}
+                className="flex-[2] bg-accent text-accent-foreground font-bold text-sm py-3 rounded-xl active:scale-95 transition-transform flex items-center justify-center gap-2 disabled:opacity-40 disabled:active:scale-100"
               >
                 <ShieldCheck className="w-4 h-4" />
-                أوافق واربط الآن
+                {selectedBanks.length > 1 ? `أوافق واربط (${selectedBanks.length} بنوك)` : "أوافق واربط الآن"}
               </button>
             </div>
           </div>
