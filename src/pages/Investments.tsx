@@ -1,11 +1,35 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MobileContainer } from "@/components/MobileContainer";
 import { ChevronRight, TrendingUp, Briefcase, Sprout, FileSignature, HandCoins, Clock, Car, Store, User, Wrench, Sparkles, Loader2, PieChart, ShieldCheck } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { Slider } from "@/components/ui/slider";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+
+// خطّاف حركة رقمية تصاعدية (Count-up) — يعطي إحساساً بالنمو المالي
+function useCountUp(target: number, duration = 900) {
+  const [val, setVal] = useState(target);
+  const prev = useRef(target);
+  useEffect(() => {
+    const from = prev.current;
+    const to = target;
+    if (from === to) return;
+    const start = performance.now();
+    let raf = 0;
+    const tick = (now: number) => {
+      const t = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - t, 3); // easeOutCubic
+      setVal(Math.round(from + (to - from) * eased));
+      if (t < 1) raf = requestAnimationFrame(tick);
+      else prev.current = to;
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, duration]);
+  return val;
+}
 
 type Tab = "portfolios" | "namaa" | "ipos" | "funding";
 
@@ -106,6 +130,7 @@ export default function Investments() {
   }
 
   const totalInvested = myContribs.reduce((s, c) => s + c.amount, 0);
+  const animatedTotal = useCountUp(totalInvested); // حركة تصاعدية للمبلغ الإجمالي
   const avgRet = totalInvested ? (myContribs.reduce((s, c) => s + c.retPct * c.amount, 0) / totalInvested).toFixed(1) : "0";
 
   const allocAvgRet = allocations
@@ -200,7 +225,7 @@ export default function Investments() {
                 <div className="flex justify-between">
                   <div>
                     <p className="text-[10px] text-muted-foreground">إجمالي المستثمر</p>
-                    <p className="text-lg font-black text-foreground">{totalInvested.toLocaleString()} <span className="text-[10px] font-normal text-muted-foreground">ر.س</span></p>
+                    <p className="text-lg font-black text-foreground tabular-nums">{animatedTotal.toLocaleString()} <span className="text-[10px] font-normal text-muted-foreground">ر.س</span></p>
                   </div>
                   <div className="text-left">
                     <p className="text-[10px] text-muted-foreground">متوسط العائد المتوقّع</p>
@@ -251,6 +276,27 @@ export default function Investments() {
                   </button>
                 </div>
               </div>
+
+              {/* Skeleton أثناء حساب التوزيع */}
+              {allocating && (
+                <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Skeleton className="w-24 h-4 rounded" />
+                    <Skeleton className="w-16 h-4 rounded" />
+                  </div>
+                  <Skeleton className="w-full h-2.5 rounded-full" />
+                  {[0, 1, 2, 3].map(i => (
+                    <div key={i} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Skeleton className="w-2 h-2 rounded-full" />
+                        <Skeleton className="w-20 h-3 rounded" />
+                      </div>
+                      <Skeleton className="w-16 h-3 rounded" />
+                    </div>
+                  ))}
+                  <Skeleton className="w-full h-10 rounded-xl" />
+                </div>
+              )}
 
               {/* ملخّص التوزيع — حركة framer-motion */}
               <AnimatePresence>

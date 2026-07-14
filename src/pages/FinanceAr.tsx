@@ -1,9 +1,10 @@
 import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MobileContainer } from "@/components/MobileContainer";
-import { Plus, FileSearch, Calculator, UserSquare, Home as HomeIcon, Car, Users, GraduationCap, ChevronRight, AlertTriangle, TrendingDown, Zap, CheckCircle2, Loader2, Building2, FileText, Wallet, Clock, RefreshCw } from "lucide-react";
+import { Plus, FileSearch, Calculator, UserSquare, Home as HomeIcon, Car, Users, GraduationCap, ChevronRight, ChevronLeft, AlertTriangle, TrendingDown, Zap, CheckCircle2, Loader2, Building2, FileText, Wallet, Clock, RefreshCw } from "lucide-react";
 import { Link } from "wouter";
 import { Slider } from "@/components/ui/slider";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useAccount } from "@/lib/AccountProvider";
 
 const MARGIN_RATE = 0.065;
@@ -106,41 +107,47 @@ export default function FinanceAr() {
 
         <h1 className="text-foreground font-bold text-3xl mb-6">تمويلاتي</h1>
 
-        {/* ===== زر المصرفية المفتوحة ===== */}
+        {/* ===== بطاقة المصرفية المفتوحة — CTA أساسي بارز بملء العرض ===== */}
         <button
           onClick={handleOpenBanking}
           disabled={obStatus === "loading"}
-          className={`w-full mb-6 rounded-2xl p-4 flex items-center justify-between transition-all border-2 ${
+          className={`w-full mb-6 rounded-3xl p-5 flex items-center gap-4 text-right transition-all shadow-lg ${
             obStatus === "done"
-              ? "bg-green-500/10 border-green-500/50"
-              : "bg-gradient-to-l from-accent/20 to-accent/5 border-accent/60 active:scale-[0.98]"
+              ? "bg-green-500/10 border-2 border-green-500/50"
+              : "bg-gradient-to-br from-accent to-orange-500 border-2 border-accent active:scale-[0.98] shadow-accent/30"
           }`}
         >
-          <div className="flex items-center gap-3">
+          {/* أيقونة داخل دائرة */}
+          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${
+            obStatus === "done" ? "bg-green-500/20" : "bg-white/20"
+          }`}>
             {obStatus === "loading" ? (
-              <Loader2 className="w-6 h-6 text-accent animate-spin" />
+              <Loader2 className={`w-7 h-7 animate-spin ${obStatus === "loading" ? "text-white" : ""}`} />
             ) : obStatus === "done" ? (
-              <CheckCircle2 className="w-6 h-6 text-green-500" />
+              <CheckCircle2 className="w-7 h-7 text-green-500" />
             ) : (
-              <Zap className="w-6 h-6 text-accent fill-accent" />
+              <Zap className="w-7 h-7 text-white fill-white" />
             )}
-            <div className="text-right">
-              <p className={`text-sm font-black ${obStatus === "done" ? "text-green-600 dark:text-green-400" : "text-foreground"}`}>
-                {obStatus === "done" ? "تم الربط بنجاح" : "ربط سريع عبر المصرفية المفتوحة"}
-              </p>
-              <p className="text-[10px] text-muted-foreground mt-0.5">
-                {obStatus === "loading" ? "جارٍ جلب بياناتك..." :
-                 obStatus === "done" ? "بياناتك محدّثة تلقائياً" :
-                 "جلب الراتب والالتزامات تلقائياً · بدون إدخال يدوي"}
-              </p>
-            </div>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className={`text-base font-black ${obStatus === "done" ? "text-green-600 dark:text-green-400" : "text-white"}`}>
+              {obStatus === "done" ? "تم الربط بنجاح ✓" : "ربط سريع عبر المصرفية المفتوحة"}
+            </p>
+            <p className={`text-[11px] mt-1 leading-relaxed ${obStatus === "done" ? "text-muted-foreground" : "text-white/90"}`}>
+              {obStatus === "loading" ? "جارٍ جلب بياناتك المالية..." :
+               obStatus === "done" ? "بياناتك محدّثة تلقائياً" :
+               "جلب الراتب والرصيد والالتزامات تلقائياً · بدون إدخال يدوي"}
+            </p>
           </div>
           {obStatus === "idle" && (
-            <span className="text-[10px] font-bold text-accent border border-accent/40 px-2 py-1 rounded-full">اربط الآن</span>
+            <span className="flex items-center gap-1 text-xs font-black text-accent bg-white px-3 py-2 rounded-xl shrink-0 shadow">
+              اربط الآن
+              <ChevronLeft className="w-4 h-4" />
+            </span>
           )}
         </button>
 
-        {/* بطاقات التحقق — تظهر عند بدء الربط */}
+        {/* بطاقات التحقق — Skeleton أثناء التحميل ثم بيانات محقّقة */}
         {obStatus !== "idle" && (
           <div className="grid grid-cols-3 gap-2 mb-6">
             {[
@@ -153,9 +160,18 @@ export default function FinanceAr() {
                 className={`rounded-xl p-3 border text-center transition-all duration-500 ${
                   verified[key]
                     ? "bg-green-500/10 border-green-500/40"
-                    : "bg-muted border-border opacity-50"
+                    : "bg-muted border-border"
                 }`}
               >
+                {!verified[key] ? (
+                  // Skeleton loader أثناء انتظار التحقق
+                  <div className="flex flex-col items-center gap-1.5">
+                    <Skeleton className="w-4 h-4 rounded-full" />
+                    <Skeleton className="w-10 h-2 rounded" />
+                    <Skeleton className="w-12 h-2.5 rounded" />
+                  </div>
+                ) : (
+                <>
                 <div className="flex justify-center mb-1">
                   {verified[key]
                     ? <CheckCircle2 className="w-4 h-4 text-green-500" />
@@ -163,9 +179,9 @@ export default function FinanceAr() {
                   }
                 </div>
                 <p className="text-[9px] text-muted-foreground font-medium">{label}</p>
-                <p className={`text-[10px] font-black mt-0.5 ${verified[key] ? "text-foreground" : "text-muted-foreground"}`}>
-                  {verified[key] ? value : "—"}
-                </p>
+                <p className="text-[10px] font-black mt-0.5 text-foreground">{value}</p>
+                </>
+                )}
               </div>
             ))}
           </div>
@@ -254,33 +270,48 @@ export default function FinanceAr() {
                 <h3 className="font-bold text-sm text-foreground">المساهمون ({ACTIVE_REQUEST.contributors.length})</h3>
               </div>
               <div className="space-y-2">
-                {ACTIVE_REQUEST.contributors.map((c, i) => {
-                  const sharePct = Math.round((c.amount / ACTIVE_REQUEST.amount) * 100);
-                  return (
-                    <div key={i} className="flex items-center justify-between bg-muted rounded-xl px-3 py-2.5">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-full bg-accent/15 text-accent flex items-center justify-center text-xs font-black">
-                          {c.name.replace("مساهم ", "").charAt(0)}
+                {(() => {
+                  const maxAmount = Math.max(...ACTIVE_REQUEST.contributors.map(c => c.amount));
+                  return ACTIVE_REQUEST.contributors.map((c, i) => {
+                    const sharePct = Math.round((c.amount / ACTIVE_REQUEST.amount) * 100);
+                    const barPct = Math.round((c.amount / maxAmount) * 100); // الوزن النسبي (الأكبر = ممتلئ)
+                    return (
+                      <div key={i} className="bg-muted rounded-xl px-3 py-2.5">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-full bg-accent/15 text-accent flex items-center justify-center text-xs font-black">
+                              {c.name.replace("مساهم ", "").charAt(0)}
+                            </div>
+                            <div>
+                              <p className="text-xs font-bold text-foreground">{c.name}</p>
+                              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full inline-flex items-center gap-1 ${
+                                c.status === "مؤكّدة"
+                                  ? "bg-green-500/15 text-green-600 dark:text-green-400"
+                                  : "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                              }`}>
+                                {c.status === "مؤكّدة" ? <CheckCircle2 className="w-2.5 h-2.5" /> : <Loader2 className="w-2.5 h-2.5" />}
+                                {c.status}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="text-left">
+                            <p className="text-xs font-black text-foreground">{c.amount.toLocaleString()} ر.س</p>
+                            <p className="text-[9px] text-muted-foreground">{sharePct}% من الطلب</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-xs font-bold text-foreground">{c.name}</p>
-                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full inline-flex items-center gap-1 ${
-                            c.status === "مؤكّدة"
-                              ? "bg-green-500/15 text-green-600 dark:text-green-400"
-                              : "bg-amber-500/15 text-amber-600 dark:text-amber-400"
-                          }`}>
-                            {c.status === "مؤكّدة" ? <CheckCircle2 className="w-2.5 h-2.5" /> : <Loader2 className="w-2.5 h-2.5" />}
-                            {c.status}
-                          </span>
+                        {/* شريط الوزن النسبي للمساهم */}
+                        <div className="h-1.5 bg-background rounded-full overflow-hidden">
+                          <motion.div
+                            className="h-full bg-accent rounded-full"
+                            initial={{ width: 0 }}
+                            animate={{ width: `${barPct}%` }}
+                            transition={{ duration: 0.6, delay: 0.1 + i * 0.08, ease: "easeOut" }}
+                          />
                         </div>
                       </div>
-                      <div className="text-left">
-                        <p className="text-xs font-black text-foreground">{c.amount.toLocaleString()} ر.س</p>
-                        <p className="text-[9px] text-muted-foreground">{sharePct}% من الطلب</p>
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  });
+                })()}
               </div>
               <p className="text-center text-[10px] text-muted-foreground mt-3 leading-relaxed">
                 🔒 أسماء المساهمين مقنّعة حفاظاً على الخصوصية · يُدار عبر مصرف الإنماء
