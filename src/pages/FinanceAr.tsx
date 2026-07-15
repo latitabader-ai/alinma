@@ -60,7 +60,19 @@ export default function FinanceAr() {
   const dbr = useMemo(() => (oblig + installment) / salary, [oblig, installment, salary]);
   const dbrPct = Math.round(dbr * 100);
   const isOver = dbr > 0.45;
-  const suggestedAmount = useMemo(() => maxAllowedAmount(salary, oblig, 36), [salary, oblig]);
+
+  // توصية ذكية ديناميكية:
+  // 1) أقصى مبلغ مسموح على نفس المدة المختارة (يتغيّر مع تغيّر المدة)
+  const suggestedAmount = useMemo(() => maxAllowedAmount(salary, oblig, months), [salary, oblig, months]);
+  // 2) أقصر مدة تُبقي المبلغ الحالي ضمن حد 45% (بديل: تمديد المدة بدل تخفيض المبلغ)
+  const suggestedMonths = useMemo(() => {
+    const terms = [12, 24, 36, 48, 60];
+    for (const m of terms) {
+      if (m <= months) continue; // نبحث عن مدة أطول من الحالية
+      if ((oblig + calcInstallment(amount, m)) / salary <= 0.45) return m;
+    }
+    return null;
+  }, [amount, oblig, salary, months]);
 
   const inputClass = "w-full bg-muted border border-border rounded-xl px-3 py-2.5 text-foreground text-sm font-medium focus:outline-none focus:border-accent";
 
@@ -329,20 +341,39 @@ export default function FinanceAr() {
             {isOver && (
               <div className="bg-red-500/10 border border-red-500/40 rounded-2xl p-4 flex gap-3">
                 <AlertTriangle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
-                <div>
+                <div className="flex-1">
                   <p className="text-sm font-bold text-red-500 mb-1">تجاوز حد عبء الدين</p>
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    وفق حد عبء الدين 45% من ساما، طلبك يتجاوز الحد.{" "}
-                    {suggestedAmount > 0 ? (
-                      <>ننصح بتعديل المبلغ إلى <span className="font-black text-foreground">{suggestedAmount.toLocaleString()} ر.س</span> على <span className="font-black text-foreground">36 شهراً</span>.</>
-                    ) : (
-                      "الالتزامات الحالية تستنفد الحد المسموح — يُنصح بتسوية بعض الالتزامات أولاً."
-                    )}
+                    وفق حد عبء الدين 45% من ساما، طلبك يتجاوز الحد. لديك خياران لإعادته للنطاق الآمن:
                   </p>
-                  {suggestedAmount > 0 && (
-                    <button onClick={() => { setAmount(suggestedAmount); setMonths(36); }} className="mt-3 flex items-center gap-1.5 text-xs font-bold text-accent">
-                      <TrendingDown className="w-3.5 h-3.5" />
-                      تطبيق المبلغ المقترح
+
+                  {/* خيار 1: تخفيض المبلغ على نفس المدة المختارة */}
+                  {suggestedAmount > 0 ? (
+                    <button
+                      onClick={() => setAmount(suggestedAmount)}
+                      className="mt-3 w-full flex items-center justify-between gap-2 bg-accent/10 border border-accent/40 rounded-xl px-3 py-2.5 active:scale-[0.98] transition-transform"
+                    >
+                      <span className="flex items-center gap-1.5 text-xs font-bold text-accent">
+                        <TrendingDown className="w-3.5 h-3.5" />
+                        خفّض المبلغ إلى {suggestedAmount.toLocaleString()} ر.س
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">على {months} شهراً</span>
+                    </button>
+                  ) : (
+                    <p className="mt-2 text-xs text-muted-foreground">الالتزامات الحالية تستنفد الحد المسموح — يُنصح بتسوية بعض الالتزامات أولاً.</p>
+                  )}
+
+                  {/* خيار 2: تمديد المدة للإبقاء على نفس المبلغ */}
+                  {suggestedMonths && (
+                    <button
+                      onClick={() => setMonths(suggestedMonths)}
+                      className="mt-2 w-full flex items-center justify-between gap-2 bg-accent/10 border border-accent/40 rounded-xl px-3 py-2.5 active:scale-[0.98] transition-transform"
+                    >
+                      <span className="flex items-center gap-1.5 text-xs font-bold text-accent">
+                        <Clock className="w-3.5 h-3.5" />
+                        مدّد المدة إلى {suggestedMonths} شهراً
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">بنفس المبلغ</span>
                     </button>
                   )}
                 </div>

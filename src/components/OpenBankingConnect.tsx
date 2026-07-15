@@ -43,6 +43,13 @@ export default function OpenBankingConnect({ onFilled }: Props) {
     setSelectedBanks(prev => prev.includes(id) ? prev.filter(b => b !== id) : [...prev, id]);
   }
 
+  // أسماء البنوك المختارة فعلياً (لعرضها في حالة الاتصال)
+  const chosen = OB_BANKS.filter(b => selectedBanks.includes(b.id));
+  const connectedLabel =
+    chosen.length === 0 ? "متصل"
+    : chosen.length === 1 ? `متصل بمصرف ${chosen[0].short} ${chosen[0].id === "alinma" ? accountMask : ""}`.trim()
+    : `متصل بـ ${chosen.length} بنوك (${chosen.map(b => b.short).join("، ")})`;
+
   function handleClick() {
     if (obStatus === "loading") return;
     if (obStatus === "done") { setObStatus("idle"); setVerified({ salary: false, statement: false, oblig: false, credit: false }); return; }
@@ -84,7 +91,7 @@ export default function OpenBankingConnect({ onFilled }: Props) {
         </div>
         <div className="flex-1 min-w-0">
           <p className={`text-base font-black ${obStatus === "done" ? "text-green-600 dark:text-green-400" : "text-white"}`}>
-            {obStatus === "done" ? `متصل بمصرف الإنماء ${accountMask}` : "ربط سريع عبر المصرفية المفتوحة"}
+            {obStatus === "done" ? connectedLabel : "ربط سريع عبر المصرفية المفتوحة"}
           </p>
           <p className={`text-[11px] mt-1 leading-relaxed ${obStatus === "done" ? "text-muted-foreground" : "text-white/90"}`}>
             {obStatus === "loading" ? "جارٍ جلب بياناتك المالية بأمان..." :
