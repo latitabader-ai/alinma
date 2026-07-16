@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { MobileContainer } from "@/components/MobileContainer";
-import { ChevronRight, CheckCircle2, AlertTriangle, XCircle, Loader2, Cpu, WifiOff, Store, X } from "lucide-react";
+import { ChevronRight, CheckCircle2, AlertTriangle, XCircle, Loader2, Cpu, WifiOff, Store, X, Users } from "lucide-react";
 import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import OpenBankingConnect from "@/components/OpenBankingConnect";
+import { SAIBOR_3M, RISK_SPREAD, returnRateFor, totalProfit, type RiskLevel as PricingLevel } from "@/lib/saibor";
 
 // خيارات نوع السلعة في النموذج (لمطابقة القيمة القادمة من المتجر)
 const ITEM_OPTIONS = ["سيارة", "أجهزة إلكترونية", "معدّات مهنية", "أثاث منزلي", "تمويل استهلاكي"];
@@ -132,12 +133,18 @@ export default function CrowdFinance() {
   }
 
   const LC = {
-    low:  { bg: "bg-green-500/10", border: "border-green-500/50", text: "text-green-600 dark:text-green-400", bar: "bg-green-500", badge: "bg-green-500/15 text-green-700 dark:text-green-400", dot: "bg-green-500" },
-    mid:  { bg: "bg-amber-500/10", border: "border-amber-500/50", text: "text-amber-600 dark:text-amber-400", bar: "bg-amber-500", badge: "bg-amber-500/15 text-amber-700 dark:text-amber-400", dot: "bg-amber-500" },
-    high: { bg: "bg-red-500/10",   border: "border-red-500/50",   text: "text-red-600 dark:text-red-400",   bar: "bg-red-500",   badge: "bg-red-500/15 text-red-700 dark:text-red-400",   dot: "bg-red-500" },
+    low:  { bg: "bg-green-500/10", border: "border-green-500/50", text: "text-green-600 dark:text-green-400", bar: "bg-green-500", badge: "bg-green-500/15 text-green-700 dark:text-green-400", dot: "bg-green-500", label: "منخفض" },
+    mid:  { bg: "bg-amber-500/10", border: "border-amber-500/50", text: "text-amber-600 dark:text-amber-400", bar: "bg-amber-500", badge: "bg-amber-500/15 text-amber-700 dark:text-amber-400", dot: "bg-amber-500", label: "متوسط" },
+    high: { bg: "bg-red-500/10",   border: "border-red-500/50",   text: "text-red-600 dark:text-red-400",   bar: "bg-red-500",   badge: "bg-red-500/15 text-red-700 dark:text-red-400",   dot: "bg-red-500", label: "مرتفع" },
   };
 
   const inputClass = "w-full bg-muted border border-border rounded-xl px-4 py-3 text-foreground text-sm font-medium focus:outline-none focus:border-accent";
+
+  // تسعير عائد المساهمين — يتبع تصنيف المخاطر (المُقيَّم إن وُجد، وإلا تقدير مبدئي من المدخلات الحالية)
+  const pricingLevel: PricingLevel =
+    (result?.level ?? assess(+amount || 0, +term || 12, +salary || 1, +oblig || 0, +credit || 0, +tenure || 0, emp).level ?? "mid") as PricingLevel;
+  const contribReturnPct = returnRateFor(pricingLevel);
+  const contribProfit = totalProfit(+amount || 0, +term || 12, pricingLevel);
 
   return (
     <MobileContainer className="bg-background text-right text-foreground" hasGlow={false}>
@@ -215,6 +222,41 @@ export default function CrowdFinance() {
                     <select value={term} onChange={e=>setTerm(e.target.value)} className={inputClass}>
                       {["12","24","36","48"].map(v=><option key={v}>{v}</option>)}</select></div>
                 </div>
+
+                {/* عائد المساهمين على المبلغ المختار — يتحدّث لحظياً */}
+                {+amount > 0 && (
+                  <div className="bg-muted/50 border border-border rounded-2xl p-3.5">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs font-black text-foreground flex items-center gap-1.5">
+                        <Users className="w-3.5 h-3.5 text-accent" /> عائد المساهمين على هذا المبلغ
+                      </span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${LC[pricingLevel].badge}`}>
+                        تسعير {LC[pricingLevel].label}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <div className="text-center flex-1">
+                        <p className="text-[9px] text-muted-foreground mb-0.5">العائد السنوي</p>
+                        <p className="text-base font-black text-green-600 dark:text-green-400">{contribReturnPct}%</p>
+                      </div>
+                      <div className="w-px h-8 bg-border" />
+                      <div className="text-center flex-1">
+                        <p className="text-[9px] text-muted-foreground mb-0.5">ربح المساهمين</p>
+                        <p className="text-base font-black text-foreground">+{Math.round(contribProfit).toLocaleString()}</p>
+                        <p className="text-[9px] text-muted-foreground">ر.س</p>
+                      </div>
+                      <div className="w-px h-8 bg-border" />
+                      <div className="text-center flex-1">
+                        <p className="text-[9px] text-muted-foreground mb-0.5">إجمالي السداد</p>
+                        <p className="text-base font-black text-foreground">{Math.round(+amount + contribProfit).toLocaleString()}</p>
+                        <p className="text-[9px] text-muted-foreground">ر.س</p>
+                      </div>
+                    </div>
+                    <p className="text-[9px] text-muted-foreground mt-3 leading-relaxed">
+                      التسعير على أساس سايبور {SAIBOR_3M}% + هامش مخاطر {RISK_SPREAD[pricingLevel]}% · يُوزَّع الربح على المساهمين خلال {term} شهراً
+                    </p>
+                  </div>
+                )}
                 <div className="grid grid-cols-2 gap-3">
                   <div><label className="block text-xs text-muted-foreground font-bold mb-1.5">الراتب الشهري (ريال)</label>
                     <input type="number" value={salary} onChange={e=>setSalary(e.target.value)} className={inputClass}/></div>

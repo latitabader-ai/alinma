@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MobileContainer } from "@/components/MobileContainer";
-import { Plus, FileSearch, Calculator, UserSquare, Home as HomeIcon, Car, Users, GraduationCap, ChevronRight, AlertTriangle, TrendingDown, CheckCircle2, Loader2, Clock, RefreshCw } from "lucide-react";
+import { Plus, FileSearch, Calculator, UserSquare, Home as HomeIcon, Car, Users, GraduationCap, ChevronRight, AlertTriangle, TrendingDown, CheckCircle2, Loader2, Clock, RefreshCw, Ban } from "lucide-react";
 import { Link } from "wouter";
 import { Slider } from "@/components/ui/slider";
 
@@ -39,6 +39,10 @@ function maxAllowedAmount(salary: number, oblig: number, months = 36) {
 export default function FinanceAr() {
   const [showCalc, setShowCalc] = useState(false);
   const [showTracking, setShowTracking] = useState(false);
+
+  // إلغاء طلب التمويل
+  const [confirmCancel, setConfirmCancel] = useState(false);
+  const [requestCancelled, setRequestCancelled] = useState(false);
 
   // نسبة التمويل المتحرّكة (تبدأ 0 ثم تتحرّك للقيمة الفعلية)
   const fundedPct = Math.round((ACTIVE_REQUEST.funded / ACTIVE_REQUEST.amount) * 100);
@@ -80,7 +84,11 @@ export default function FinanceAr() {
     <MobileContainer className="bg-background p-4 text-right text-foreground" hasGlow={false}>
       <div dir="rtl" className="flex-1 flex flex-col h-full w-full">
         <header className="flex items-center justify-start mt-4 mb-4">
-          <ChevronRight className="w-6 h-6 text-foreground cursor-pointer" />
+          <Link href="/services">
+            <button aria-label="رجوع" className="w-9 h-9 -mr-2 rounded-full flex items-center justify-center text-foreground hover:bg-muted active:scale-95 transition-all">
+              <ChevronRight className="w-6 h-6" />
+            </button>
+          </Link>
         </header>
 
         <h1 className="text-foreground font-bold text-3xl mb-6">تمويلاتي</h1>
@@ -93,12 +101,16 @@ export default function FinanceAr() {
             </div>
             <span className="text-[11px] font-medium text-center text-foreground">حاسبة التمويل</span>
           </button>
-          <button onClick={() => setShowTracking(v => !v)} className="flex flex-col items-center gap-2 flex-1">
-            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border transition-colors relative ${showTracking ? "bg-accent text-accent-foreground border-accent" : "bg-card text-foreground border-border"}`}>
+          <button onClick={() => !requestCancelled && setShowTracking(v => !v)} className="flex flex-col items-center gap-2 flex-1">
+            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border transition-colors relative ${showTracking ? "bg-accent text-accent-foreground border-accent" : "bg-card text-foreground border-border"} ${requestCancelled ? "opacity-50" : ""}`}>
               <FileSearch className="w-6 h-6" />
-              <span className="absolute -top-1 -left-1 w-4 h-4 bg-green-500 rounded-full text-[9px] text-white flex items-center justify-center font-bold">1</span>
+              {!requestCancelled && (
+                <span className="absolute -top-1 -left-1 w-4 h-4 bg-green-500 rounded-full text-[9px] text-white flex items-center justify-center font-bold">1</span>
+              )}
             </div>
-            <span className="text-[11px] font-medium text-center text-foreground">متابعة الطلبات</span>
+            <span className="text-[11px] font-medium text-center text-foreground">
+              {requestCancelled ? "لا طلبات نشطة" : "متابعة الطلبات"}
+            </span>
           </button>
           <div className="flex flex-col items-center gap-2 flex-1">
             <div className="w-14 h-14 bg-card rounded-2xl flex items-center justify-center text-foreground border border-border">
@@ -110,11 +122,12 @@ export default function FinanceAr() {
 
         {/* ===== حالة طلب التمويل الحالي (تتبّع الطلب) — حركة framer-motion ===== */}
         <AnimatePresence>
-        {showTracking && (
+        {showTracking && !requestCancelled && (
           <motion.div
+            key="tracking"
             initial={{ opacity: 0, y: -12, height: 0 }}
             animate={{ opacity: 1, y: 0, height: "auto" }}
-            exit={{ opacity: 0, y: -12, height: 0 }}
+            exit={{ opacity: 0, y: -12, height: 0, marginBottom: 0, paddingTop: 0, paddingBottom: 0 }}
             transition={{ duration: 0.4, ease: "easeOut" }}
             className="bg-card rounded-3xl p-5 mb-8 border border-border space-y-4 overflow-hidden">
             <div className="flex items-center justify-between">
@@ -214,6 +227,39 @@ export default function FinanceAr() {
               <p className="text-center text-[10px] text-muted-foreground mt-3 leading-relaxed">
                 🔒 أسماء المساهمين مقنّعة حفاظاً على الخصوصية · يُدار عبر مصرف الإنماء
               </p>
+            </div>
+
+            {/* إلغاء الطلب */}
+            <div className="border-t border-border pt-4">
+              {!confirmCancel ? (
+                <button
+                  onClick={() => setConfirmCancel(true)}
+                  className="w-full flex items-center justify-center gap-1.5 text-xs font-bold text-red-600 dark:text-red-400 bg-red-500/10 border border-red-500/30 rounded-xl py-2.5 active:scale-95 transition-transform"
+                >
+                  <Ban className="w-3.5 h-3.5" />
+                  إلغاء طلب التمويل
+                </button>
+              ) : (
+                <div className="bg-red-500/10 border border-red-500/40 rounded-xl p-3 space-y-3">
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    سيُلغى طلبك وتُعاد مبالغ المساهمين المؤكّدة ({ACTIVE_REQUEST.funded.toLocaleString()} ر.س) إلى حساباتهم خلال 3 أيام عمل. لا يمكن التراجع بعد الإلغاء.
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setConfirmCancel(false)}
+                      className="flex-1 bg-muted text-foreground font-bold text-xs py-2.5 rounded-lg active:scale-95 transition-transform"
+                    >
+                      تراجع
+                    </button>
+                    <button
+                      onClick={() => { setRequestCancelled(true); setConfirmCancel(false); setShowTracking(false); }}
+                      className="flex-1 bg-red-500 text-white font-bold text-xs py-2.5 rounded-lg active:scale-95 transition-transform"
+                    >
+                      تأكيد الإلغاء
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </motion.div>
         )}
