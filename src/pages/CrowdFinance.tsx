@@ -5,6 +5,7 @@ import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import OpenBankingConnect from "@/components/OpenBankingConnect";
+import ContractExecution from "@/components/ContractExecution";
 import { SAIBOR_3M, RISK_SPREAD, returnRateFor, totalProfit, type RiskLevel as PricingLevel } from "@/lib/saibor";
 
 // خيارات نوع السلعة في النموذج (لمطابقة القيمة القادمة من المتجر)
@@ -385,6 +386,19 @@ export default function CrowdFinance() {
                   </div>
                 </div>
               )}
+
+              {/* طبقة تكوين العقد — تعمل فقط بعد قبول الطلب (لا صرف قبل عقد صحيح) */}
+              {result && result.level !== "high" && (
+                <ContractExecution
+                  // إعادة التقييم بمدخلات مختلفة تُنشئ عقداً جديداً — لا يبقى عقد سابق معروضاً
+                  key={`${item}-${amount}-${term}-${result.level}`}
+                  purpose={item}
+                  amount={+amount || 0}
+                  tenor={+term || 36}
+                  ai={{ level: result.level ?? "mid", dbr: result.dbr, confidence: result.highRiskPrecision ?? 0 }}
+                />
+              )}
+
               <p className="text-center text-[10px] text-muted-foreground leading-relaxed">التقييم عبر نموذج Random Forest حقيقي مدرّب على معايير المخاطر السعودية (مع تقييم محلي احتياطي)</p>
             </div>
           )}

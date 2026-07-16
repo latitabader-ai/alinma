@@ -101,13 +101,18 @@ class Engine:
 
 engine: Engine | None = None
 
-app = FastAPI(title="Sharik Risk API", version="1.0")
+app = FastAPI(title="Sharik Risk API", version="1.1")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],          # للعرض؛ يُضيّق في الإنتاج
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# محرك التورق المنظم — طبقة مستقلة تستهلك حكم الذكاء الاصطناعي
+# ولا تمسّه. /assess يبقى مصنّفاً محضاً لا يسعّر ولا يصرف.
+from tawarruq import router as tawarruq_router  # noqa: E402
+app.include_router(tawarruq_router)
 
 
 @app.on_event("startup")
