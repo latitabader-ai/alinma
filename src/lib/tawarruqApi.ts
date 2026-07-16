@@ -3,7 +3,7 @@
 //  طبقة تكوين العقد بين محرك الذكاء الاصطناعي والصرف.
 // ============================================================
 
-const API_BASE = import.meta.env.VITE_API_URL || "https://sharik-risk-api.onrender.com";
+const API_BASE = import.meta.env.VITE_API_URL || "https://alinma.onrender.com";
 
 export type ContractType = "murabaha" | "tawarruq";
 
