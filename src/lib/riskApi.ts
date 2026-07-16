@@ -29,7 +29,7 @@ export interface AssessPayload {
 }
 
 // عنوان الـ API — الافتراضي هو خادم Render المستضاف (يعمل على الموقع الحيّ مباشرة).
-const API_BASE = import.meta.env.VITE_API_URL || "https://alinma.onrender.com";
+const API_BASE = import.meta.env.VITE_API_URL || "https://sharik-risk-api.onrender.com";
 // إيقاظ الخادم المجاني (Render يدخل سبات بعد الخمول) — نداء خفيف عند فتح الشاشة
 // حتى يكون النموذج جاهزاً بحلول وقت ضغط المستخدم على "قيّم".
 export function warmUpApi(): void {
