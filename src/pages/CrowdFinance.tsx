@@ -1,9 +1,13 @@
 import { useState, useEffect } from "react";
 import { MobileContainer } from "@/components/MobileContainer";
-import { ChevronRight, CheckCircle2, AlertTriangle, XCircle, Loader2, Cpu, WifiOff } from "lucide-react";
+import { ChevronRight, CheckCircle2, AlertTriangle, XCircle, Loader2, Cpu, WifiOff, Store, X } from "lucide-react";
 import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import OpenBankingConnect from "@/components/OpenBankingConnect";
+
+// خيارات نوع السلعة في النموذج (لمطابقة القيمة القادمة من المتجر)
+const ITEM_OPTIONS = ["سيارة", "أجهزة إلكترونية", "معدّات مهنية", "أثاث منزلي", "تمويل استهلاكي"];
 import { assessViaApi, warmUpApi } from "@/lib/riskApi";
 
 type Tab = "apply" | "how";
@@ -74,8 +78,28 @@ export default function CrowdFinance() {
   const [emp, setEmp]       = useState("حكومي");
   const [assessing, setAssessing] = useState(false);
 
+  // قادم من المتجر (عبر query params): اسم المنتج لعرضه في التنبيه
+  const [fromStore, setFromStore] = useState<string | null>(null);
+
   // إيقاظ خادم النموذج مبكّراً ليكون جاهزاً عند التقييم
   useEffect(() => { warmUpApi(); }, []);
+
+  // تعبئة تلقائية عند القدوم من صفحة المتجر (نوع السلعة + المبلغ)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const qAmount = params.get("amount");
+    const qItem = params.get("item");
+    const qName = params.get("name");
+    if (qAmount && !isNaN(Number(qAmount)) && Number(qAmount) > 0) {
+      setAmount(String(Math.round(Number(qAmount))));
+    }
+    if (qItem) {
+      // طابق نوع السلعة مع أقرب خيار موجود، وإلا اترك الافتراضي
+      const match = ITEM_OPTIONS.find(o => o === qItem);
+      if (match) setItem(match);
+    }
+    if (qName || qItem) setFromStore(qName || qItem);
+  }, []);
 
   async function handleAssess() {
     setAssessing(true);
@@ -143,6 +167,25 @@ export default function CrowdFinance() {
           {/* ===== Tab 1: Apply ===== */}
           {tab === "apply" && (
             <div className="space-y-4">
+              {/* شريط القدوم من المتجر (query params) */}
+              {fromStore && (
+                <Alert className="bg-accent/10 border-accent/30 text-foreground pr-4 pl-10">
+                  <button
+                    onClick={() => setFromStore(null)}
+                    aria-label="إخفاء"
+                    className="absolute top-3 left-3 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                  <AlertDescription className="flex items-start gap-2 text-right">
+                    <Store className="w-4 h-4 text-accent shrink-0 mt-0.5" />
+                    <span className="text-xs text-muted-foreground leading-relaxed">
+                      قادم من المتجر: <span className="font-bold text-foreground">{fromStore}</span> — يكتمل التمويل عادة خلال أيام، وتُصرف قيمة السلعة للتاجر عند اكتمال الجمع
+                    </span>
+                  </AlertDescription>
+                </Alert>
+              )}
+
               <div className="inline-flex items-center gap-2 bg-green-500/10 text-green-600 dark:text-green-400 text-xs font-bold px-3 py-1.5 rounded-full border border-green-500/30">
                 <CheckCircle2 className="w-3.5 h-3.5" />تمويل متوافق مع الشريعة (مرابحة)
               </div>

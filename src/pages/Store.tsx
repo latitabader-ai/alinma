@@ -1,6 +1,15 @@
 import { MobileContainer } from "@/components/MobileContainer";
-import { History, Bookmark, ShoppingCart, Search, Ticket, Smartphone, ShieldCheck, Laptop, Gamepad2, Shirt, Apple, ChevronRight } from "lucide-react";
+import { History, Bookmark, ShoppingCart, Search, Ticket, Smartphone, ShieldCheck, Laptop, Gamepad2, Shirt, Apple, ChevronRight, HandCoins, Camera, Sofa } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Link } from "wouter";
+
+// منتجات قابلة للتمويل عبر شارِك — نوع السلعة يطابق خيارات نموذج طلب التمويل
+const FINANCEABLE = [
+  { name: "لابتوب احترافي",   cat: "أجهزة إلكترونية", price: 6500, icon: Laptop },
+  { name: "جهاز ألعاب PS5",   cat: "أجهزة إلكترونية", price: 2400, icon: Gamepad2 },
+  { name: "معدّات تصوير",     cat: "معدّات مهنية",    price: 8900, icon: Camera },
+  { name: "طقم أثاث منزلي",   cat: "أثاث منزلي",       price: 4200, icon: Sofa },
+];
 
 export default function Store() {
   return (
@@ -85,6 +94,34 @@ export default function Store() {
             <div className="h-12 w-24 bg-muted border border-border rounded-xl flex items-center justify-center">
               <span className="font-bold text-foreground tracking-tighter">SAMSUNG</span>
             </div>
+          </div>
+        </div>
+
+        {/* ===== مموّلة عبر شارِك — منتجات قابلة للتمويل الجماعي ===== */}
+        <div dir="rtl" className="mt-8">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="font-bold text-sm text-foreground">موّلها عبر شارِك</h3>
+            <span className="text-[10px] text-muted-foreground">تمويل جماعي متوافق مع الشريعة</span>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {FINANCEABLE.map(({ name, cat, price, icon: Icon }) => (
+              <div key={name} className="bg-muted border border-border rounded-2xl p-3 flex flex-col">
+                <div className="w-full aspect-[3/2] bg-card rounded-xl flex items-center justify-center text-primary mb-2 border border-border">
+                  <Icon className="w-8 h-8" />
+                </div>
+                <p className="text-xs font-bold text-foreground leading-tight">{name}</p>
+                <p className="text-[10px] text-muted-foreground mb-1.5">{cat}</p>
+                <p className="text-sm font-black text-foreground mb-2">
+                  {price.toLocaleString()} <span className="text-[9px] font-normal text-muted-foreground">ر.س</span>
+                </p>
+                <Link href={`/crowd-finance?item=${encodeURIComponent(cat)}&amount=${price}&name=${encodeURIComponent(name)}`}>
+                  <div className="w-full flex items-center justify-center gap-1.5 bg-accent/10 text-accent border border-accent/30 rounded-lg py-2 text-[11px] font-bold cursor-pointer active:scale-95 transition-transform">
+                    <HandCoins className="w-3.5 h-3.5" />
+                    موّلها عبر شارِك
+                  </div>
+                </Link>
+              </div>
+            ))}
           </div>
         </div>
 
