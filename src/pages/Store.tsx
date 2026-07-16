@@ -1,14 +1,15 @@
 import { MobileContainer } from "@/components/MobileContainer";
-import { History, Bookmark, ShoppingCart, Search, Ticket, Smartphone, ShieldCheck, Laptop, Gamepad2, Shirt, Apple, ChevronRight, HandCoins, Camera, Sofa } from "lucide-react";
+import { History, Bookmark, ShoppingCart, Search, Ticket, Smartphone, ShieldCheck, Laptop, Gamepad2, Shirt, Apple, ChevronRight, HandCoins, Camera, Sofa, Car } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Link } from "wouter";
 
 // منتجات قابلة للتمويل عبر شارِك — نوع السلعة يطابق خيارات نموذج طلب التمويل
 const FINANCEABLE = [
-  { name: "لابتوب احترافي",   cat: "أجهزة إلكترونية", price: 6500, icon: Laptop },
-  { name: "جهاز ألعاب PS5",   cat: "أجهزة إلكترونية", price: 2400, icon: Gamepad2 },
-  { name: "معدّات تصوير",     cat: "معدّات مهنية",    price: 8900, icon: Camera },
-  { name: "طقم أثاث منزلي",   cat: "أثاث منزلي",       price: 4200, icon: Sofa },
+  { name: "سيارة عائلية",     cat: "سيارة",            price: 85000, icon: Car },
+  { name: "لابتوب احترافي",   cat: "أجهزة إلكترونية", price: 6500,  icon: Laptop },
+  { name: "جهاز ألعاب PS5",   cat: "أجهزة إلكترونية", price: 2400,  icon: Gamepad2 },
+  { name: "معدّات تصوير",     cat: "معدّات مهنية",    price: 8900,  icon: Camera },
+  { name: "طقم أثاث منزلي",   cat: "أثاث منزلي",       price: 4200,  icon: Sofa },
 ];
 
 export default function Store() {

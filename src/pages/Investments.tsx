@@ -71,6 +71,9 @@ const LC = {
   high: { text: "text-red-600 dark:text-red-400",     bar: "bg-red-500",   badge: "bg-red-500/15 text-red-700 dark:text-red-400",       dot: "bg-red-500",   label: "مرتفع" },
 };
 
+// الحد الأدنى للاستثمار الذكي — معلن في الواجهة، لا يُطبَّق بصمت
+const MIN_SMART_INVEST = 1000;
+
 // عقوبة المخاطرة لكل فئة (كلما ارتفع الخطر قلّ الوزن عند تساوي العائد)
 const RISK_PENALTY: Record<RiskLevel, number> = { low: 1, mid: 1.6, high: 2.6 };
 
@@ -100,7 +103,7 @@ interface Alloc { opp: Opp; amount: number; sharePct: number }
  * المبالغ الموزّعة = المبلغ المُدخل بالضبط (لا زيادة من التقريب).
  */
 function smartAllocate(total: number, opps: Opp[]): Alloc[] {
-  const STEP = 1000;
+  const STEP = 1;                       // دقة بالريال — لا تقريب لمضاعفات الألف
   const units = Math.floor(total / STEP);
   if (units <= 0 || !opps.length) return [];
 
@@ -142,6 +145,7 @@ export default function Investments() {
   const [investAmt, setInvestAmt] = useState("10000");
   const [allocating, setAllocating] = useState(false);
   const [allocations, setAllocations] = useState<Alloc[] | null>(null);
+  const [investError, setInvestError] = useState<string | null>(null);
 
   // المساهمة في فرصة محدّدة
   const [activeOpp, setActiveOpp] = useState<Opp | null>(null);
@@ -189,7 +193,19 @@ export default function Investments() {
     : null;
 
   function handleSmartInvest() {
-    const total = Math.max(5000, Math.round(+investAmt / 1000) * 1000);
+    const total = Math.floor(+investAmt || 0);
+
+    // نتحقّق ونشرح بدل تغيير رقم المستخدم بصمت
+    if (total < MIN_SMART_INVEST) {
+      setInvestError(`الحد الأدنى للاستثمار الذكي ${MIN_SMART_INVEST.toLocaleString()} ر.س — ليتوزّع على عدة فرص`);
+      return;
+    }
+    if (total > balance) {
+      setInvestError(`المبلغ يتجاوز رصيدك المتاح (${balance.toLocaleString()} ر.س)`);
+      return;
+    }
+
+    setInvestError(null);
     setAllocating(true);
     setAllocations(null);
     setTimeout(() => {
@@ -345,9 +361,9 @@ export default function Investments() {
                   <input
                     type="number"
                     value={investAmt}
-                    onChange={e => setInvestAmt(e.target.value)}
-                    placeholder="المبلغ الإجمالي (ريال)"
-                    className="flex-1 bg-background border border-border rounded-xl px-3 py-2.5 text-foreground text-sm font-medium focus:outline-none focus:border-accent"
+                    onChange={e => { setInvestAmt(e.target.value); setInvestError(null); }}
+                    placeholder={`المبلغ (حد أدنى ${MIN_SMART_INVEST.toLocaleString()})`}
+                    className={`flex-1 bg-background border rounded-xl px-3 py-2.5 text-foreground text-sm font-medium focus:outline-none ${investError ? "border-red-500" : "border-border focus:border-accent"}`}
                   />
                   <button
                     onClick={handleSmartInvest}
@@ -358,7 +374,14 @@ export default function Investments() {
                     {allocating ? "يحسب..." : "وزّع الآن"}
                   </button>
                 </div>
-                <p className="text-[9px] text-muted-foreground mt-2">التسعير على أساس سايبور {SAIBOR_3M}% + هامش المخاطر</p>
+                {investError && (
+                  <p className="text-[10px] text-red-600 dark:text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-2.5 py-1.5 mt-2">
+                    {investError}
+                  </p>
+                )}
+                <p className="text-[9px] text-muted-foreground mt-2">
+                  يُوزَّع المبلغ بالضبط كما أدخلته · التسعير على أساس سايبور {SAIBOR_3M}% + هامش المخاطر
+                </p>
               </div>
 
               {/* Skeleton أثناء حساب التوزيع */}

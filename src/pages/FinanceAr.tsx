@@ -7,21 +7,49 @@ import { Slider } from "@/components/ui/slider";
 
 const MARGIN_RATE = 0.065;
 
-// الطلب النشط لطالب التمويل (تتبّع الطلب — الميزة 2)
-const ACTIVE_REQUEST = {
-  item: "تمويل سيارة",
-  amount: 80000,
-  funded: 52000,
-  months: 36,
-  eta: "5 أيام",
-  updated: "قبل ساعتين",
-  contributors: [
-    { name: "مساهم ع. ش.", amount: 15000, status: "مؤكّدة" as const },
-    { name: "مساهم م. د.", amount: 12000, status: "مؤكّدة" as const },
-    { name: "مساهم ن. ع.", amount: 10000, status: "مؤكّدة" as const },
-    { name: "مساهم س. ي.", amount: 8000, status: "قيد المعالجة" as const },
-    { name: "مساهم ف. ة.", amount: 7000, status: "قيد المعالجة" as const },
-  ],
+interface Contributor { name: string; amount: number; status: "مؤكّدة" | "قيد المعالجة" }
+interface FinRequest {
+  id: string;
+  item: string;
+  amount: number;
+  funded: number;
+  months: number;
+  eta: string;
+  updated: string;
+  status: "نشط" | "قيد المراجعة";
+  contributors: Contributor[];
+}
+
+// طلبات التمويل — تبدأ بطلب قائم، وتُضاف إليها الطلبات الجديدة
+const INITIAL_REQUESTS: FinRequest[] = [
+  {
+    id: "REQ-1", item: "تمويل سيارة", amount: 80000, funded: 52000, months: 36,
+    eta: "5 أيام", updated: "قبل ساعتين", status: "نشط",
+    contributors: [
+      { name: "مساهم ع. ش.", amount: 15000, status: "مؤكّدة" },
+      { name: "مساهم م. د.", amount: 12000, status: "مؤكّدة" },
+      { name: "مساهم ن. ع.", amount: 10000, status: "مؤكّدة" },
+      { name: "مساهم س. ي.", amount: 8000, status: "قيد المعالجة" },
+      { name: "مساهم ف. ة.", amount: 7000, status: "قيد المعالجة" },
+    ],
+  },
+];
+
+// خيارات التمويل — نفس قائمة "اكتشف خيارات التمويل"
+const FINANCE_OPTIONS = [
+  { key: "personal",  title: "تمويل شخصي",              desc: "خيارات متعددة لتناسب احتياجاتك.",                        amount: 60000,  months: 36 },
+  { key: "realestate", title: "التمويل العقاري",         desc: "نساعدك بتحقيق حلمك من خلال التمويل العقاري.",            amount: 500000, months: 60 },
+  { key: "leasing",   title: "التمويل التأجيري للسيارات", desc: "احصل على سيارة أحلامك من خلال الإنماء بسهولة.",          amount: 85000,  months: 48 },
+  { key: "education", title: "تمويل التعليم",            desc: "استثمر في مستقبلك وموّل رسومك الدراسية بأقساط ميسّرة.",  amount: 40000,  months: 24 },
+  { key: "crowd",     title: "تمويل جماعي",              desc: "حقق أهدافك المالية بالتعاون مع الآخرين.",                amount: 0,      months: 0 },
+] as const;
+
+const OPTION_ICON: Record<string, JSX.Element> = {
+  personal:   <UserSquare className="w-5 h-5" />,
+  realestate: <HomeIcon className="w-5 h-5" />,
+  leasing:    <Car className="w-5 h-5" />,
+  education:  <GraduationCap className="w-5 h-5" />,
+  crowd:      <Users className="w-5 h-5" />,
 };
 
 function calcInstallment(amount: number, months: number) {
@@ -39,21 +67,41 @@ function maxAllowedAmount(salary: number, oblig: number, months = 36) {
 export default function FinanceAr() {
   const [showCalc, setShowCalc] = useState(false);
   const [showTracking, setShowTracking] = useState(false);
+  const [showNewFinance, setShowNewFinance] = useState(false);
 
-  // إلغاء طلب التمويل
-  const [confirmCancel, setConfirmCancel] = useState(false);
-  const [requestCancelled, setRequestCancelled] = useState(false);
+  // طلبات التمويل — تُضاف إليها الطلبات الجديدة وتظهر في متابعة الطلبات
+  const [requests, setRequests] = useState<FinRequest[]>(INITIAL_REQUESTS);
+  const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
+  const [justAdded, setJustAdded] = useState<string | null>(null);
 
-  // نسبة التمويل المتحرّكة (تبدأ 0 ثم تتحرّك للقيمة الفعلية)
-  const fundedPct = Math.round((ACTIVE_REQUEST.funded / ACTIVE_REQUEST.amount) * 100);
+  function addRequest(opt: typeof FINANCE_OPTIONS[number]) {
+    const req: FinRequest = {
+      id: `REQ-${Date.now()}`,
+      item: opt.title,
+      amount: opt.amount,
+      funded: 0,                       // طلب جديد — لم يُموَّل بعد
+      months: opt.months,
+      eta: "قيد التقييم",
+      updated: "الآن",
+      status: "قيد المراجعة",
+      contributors: [],
+    };
+    setRequests(prev => [req, ...prev]);
+    setShowNewFinance(false);
+    setShowTracking(true);             // انقل المستخدم لمتابعة الطلبات مباشرة
+    setJustAdded(req.id);
+    setTimeout(() => setJustAdded(null), 2600);
+  }
+
+  // نسبة التمويل المتحرّكة لكل طلب (تبدأ 0 ثم تصل للقيمة الفعلية)
   const [progress, setProgress] = useState(0);
   useEffect(() => {
     if (showTracking) {
-      const t = setTimeout(() => setProgress(fundedPct), 100);
+      const t = setTimeout(() => setProgress(100), 100);
       return () => clearTimeout(t);
     }
     setProgress(0);
-  }, [showTracking, fundedPct]);
+  }, [showTracking]);
 
   const [amount, setAmount] = useState(100000);
   const [months, setMonths] = useState(36);
@@ -101,166 +149,247 @@ export default function FinanceAr() {
             </div>
             <span className="text-[11px] font-medium text-center text-foreground">حاسبة التمويل</span>
           </button>
-          <button onClick={() => !requestCancelled && setShowTracking(v => !v)} className="flex flex-col items-center gap-2 flex-1">
-            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border transition-colors relative ${showTracking ? "bg-accent text-accent-foreground border-accent" : "bg-card text-foreground border-border"} ${requestCancelled ? "opacity-50" : ""}`}>
+          <button onClick={() => requests.length && setShowTracking(v => !v)} className="flex flex-col items-center gap-2 flex-1">
+            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border transition-colors relative ${showTracking ? "bg-accent text-accent-foreground border-accent" : "bg-card text-foreground border-border"} ${!requests.length ? "opacity-50" : ""}`}>
               <FileSearch className="w-6 h-6" />
-              {!requestCancelled && (
-                <span className="absolute -top-1 -left-1 w-4 h-4 bg-green-500 rounded-full text-[9px] text-white flex items-center justify-center font-bold">1</span>
+              {requests.length > 0 && (
+                <span className="absolute -top-1 -left-1 w-4 h-4 bg-green-500 rounded-full text-[9px] text-white flex items-center justify-center font-bold">{requests.length}</span>
               )}
             </div>
             <span className="text-[11px] font-medium text-center text-foreground">
-              {requestCancelled ? "لا طلبات نشطة" : "متابعة الطلبات"}
+              {requests.length ? "متابعة الطلبات" : "لا طلبات نشطة"}
             </span>
           </button>
-          <div className="flex flex-col items-center gap-2 flex-1">
-            <div className="w-14 h-14 bg-card rounded-2xl flex items-center justify-center text-foreground border border-border">
+          <button onClick={() => setShowNewFinance(v => !v)} className="flex flex-col items-center gap-2 flex-1">
+            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border transition-colors ${showNewFinance ? "bg-accent text-accent-foreground border-accent" : "bg-card text-foreground border-border"}`}>
               <Plus className="w-6 h-6" />
             </div>
             <span className="text-[11px] font-medium text-center text-foreground">تمويل جديد</span>
-          </div>
+          </button>
         </div>
 
-        {/* ===== حالة طلب التمويل الحالي (تتبّع الطلب) — حركة framer-motion ===== */}
+        {/* ===== تمويل جديد — خيارات التمويل ===== */}
         <AnimatePresence>
-        {showTracking && !requestCancelled && (
+        {showNewFinance && (
+          <motion.div
+            key="new-finance"
+            initial={{ opacity: 0, y: -12, height: 0 }}
+            animate={{ opacity: 1, y: 0, height: "auto" }}
+            exit={{ opacity: 0, y: -12, height: 0, marginBottom: 0 }}
+            transition={{ duration: 0.35, ease: "easeOut" }}
+            className="bg-card rounded-3xl p-5 mb-8 border border-border space-y-3 overflow-hidden"
+          >
+            <div>
+              <h2 className="font-bold text-lg text-foreground">اكتشف خيارات التمويل</h2>
+              <p className="text-xs text-muted-foreground leading-relaxed mt-1">اختر نوع التمويل المناسب — يُضاف طلبك مباشرة لمتابعة الطلبات.</p>
+            </div>
+            {FINANCE_OPTIONS.map(opt => {
+              const icon = OPTION_ICON[opt.key];
+              // التمويل الجماعي له مساره الخاص (طلب + تقييم ذكاء اصطناعي)
+              if (opt.key === "crowd") {
+                return (
+                  <Link key={opt.key} href="/crowd-finance">
+                    <div className="bg-muted rounded-2xl p-4 flex items-center justify-between cursor-pointer border border-border active:scale-[0.98] transition-transform">
+                      <div className="flex-1 ml-3">
+                        <h3 className="font-bold text-foreground text-sm">{opt.title}</h3>
+                        <p className="text-[10px] text-muted-foreground leading-relaxed">{opt.desc}</p>
+                      </div>
+                      <div className="w-11 h-11 bg-background rounded-xl flex items-center justify-center text-accent shrink-0">{icon}</div>
+                    </div>
+                  </Link>
+                );
+              }
+              return (
+                <button
+                  key={opt.key}
+                  onClick={() => addRequest(opt)}
+                  className="w-full bg-muted rounded-2xl p-4 flex items-center justify-between border border-border active:scale-[0.98] transition-transform text-right"
+                >
+                  <div className="flex-1 ml-3">
+                    <h3 className="font-bold text-foreground text-sm">{opt.title}</h3>
+                    <p className="text-[10px] text-muted-foreground leading-relaxed">{opt.desc}</p>
+                    <p className="text-[10px] text-accent font-bold mt-1">حتى {opt.amount.toLocaleString()} ر.س · {opt.months} شهراً</p>
+                  </div>
+                  <div className="w-11 h-11 bg-background rounded-xl flex items-center justify-center text-foreground shrink-0">{icon}</div>
+                </button>
+              );
+            })}
+          </motion.div>
+        )}
+        </AnimatePresence>
+
+        {/* ===== متابعة الطلبات — قائمة الطلبات مع تتبّع كل طلب ===== */}
+        <AnimatePresence>
+        {showTracking && requests.length > 0 && (
           <motion.div
             key="tracking"
             initial={{ opacity: 0, y: -12, height: 0 }}
             animate={{ opacity: 1, y: 0, height: "auto" }}
-            exit={{ opacity: 0, y: -12, height: 0, marginBottom: 0, paddingTop: 0, paddingBottom: 0 }}
+            exit={{ opacity: 0, y: -12, height: 0, marginBottom: 0 }}
             transition={{ duration: 0.4, ease: "easeOut" }}
-            className="bg-card rounded-3xl p-5 mb-8 border border-border space-y-4 overflow-hidden">
-            <div className="flex items-center justify-between">
-              <h2 className="font-bold text-lg text-foreground">حالة طلب التمويل الحالي</h2>
-              <span className="text-[10px] font-bold text-green-600 dark:text-green-400 bg-green-500/10 border border-green-500/30 px-2.5 py-1 rounded-full flex items-center gap-1">
-                <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-                نشط
-              </span>
-            </div>
+            className="mb-8 space-y-4 overflow-hidden">
 
-            <p className="text-sm text-muted-foreground">{ACTIVE_REQUEST.item} · على {ACTIVE_REQUEST.months} شهراً</p>
+            {requests.map(req => {
+              const fundedPct = req.amount ? Math.round((req.funded / req.amount) * 100) : 0;
+              const isNew = justAdded === req.id;
+              return (
+                <div key={req.id} className={`bg-card rounded-3xl p-5 border space-y-4 transition-colors ${isNew ? "border-accent" : "border-border"}`}>
+                  <div className="flex items-center justify-between">
+                    <h2 className="font-bold text-base text-foreground">حالة طلب التمويل</h2>
+                    {req.status === "نشط" ? (
+                      <span className="text-[10px] font-bold text-green-600 dark:text-green-400 bg-green-500/10 border border-green-500/30 px-2.5 py-1 rounded-full flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                        نشط
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/30 px-2.5 py-1 rounded-full flex items-center gap-1">
+                        <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                        قيد المراجعة
+                      </span>
+                    )}
+                  </div>
 
-            {/* بطاقة الحالة — أربع خانات */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-muted rounded-2xl p-3">
-                <p className="text-[10px] text-muted-foreground mb-1">المبلغ المطلوب</p>
-                <p className="text-base font-black text-foreground">{ACTIVE_REQUEST.amount.toLocaleString()} <span className="text-[10px] font-normal text-muted-foreground">ر.س</span></p>
-              </div>
-              <div className="bg-muted rounded-2xl p-3">
-                <p className="text-[10px] text-muted-foreground mb-1">المتبقّي</p>
-                <p className="text-base font-black text-accent">{(ACTIVE_REQUEST.amount - ACTIVE_REQUEST.funded).toLocaleString()} <span className="text-[10px] font-normal text-muted-foreground">ر.س</span></p>
-              </div>
-              <div className="bg-muted rounded-2xl p-3">
-                <p className="text-[10px] text-muted-foreground mb-1 flex items-center gap-1"><Clock className="w-3 h-3" /> الوقت المتوقّع</p>
-                <p className="text-base font-black text-foreground">{ACTIVE_REQUEST.eta}</p>
-              </div>
-              <div className="bg-muted rounded-2xl p-3">
-                <p className="text-[10px] text-muted-foreground mb-1 flex items-center gap-1"><RefreshCw className="w-3 h-3" /> آخر تحديث</p>
-                <p className="text-base font-black text-foreground">{ACTIVE_REQUEST.updated}</p>
-              </div>
-            </div>
+                  <p className="text-sm text-muted-foreground">
+                    {req.item}{req.months ? ` · على ${req.months} شهراً` : ""}
+                    {isNew && <span className="text-accent font-bold"> · أُضيف الآن</span>}
+                  </p>
 
-            {/* شريط التقدّم المتحرّك */}
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-black text-green-600 dark:text-green-400">{fundedPct}% مموّل</span>
-                <span className="text-xs text-muted-foreground">{ACTIVE_REQUEST.funded.toLocaleString()} من {ACTIVE_REQUEST.amount.toLocaleString()} ر.س</span>
-              </div>
-              <div className="h-3 bg-muted rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-l from-green-500 to-emerald-400 rounded-full transition-all duration-1000 ease-out"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-            </div>
+                  {/* بطاقة الحالة — أربع خانات */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-muted rounded-2xl p-3">
+                      <p className="text-[10px] text-muted-foreground mb-1">المبلغ المطلوب</p>
+                      <p className="text-base font-black text-foreground">{req.amount.toLocaleString()} <span className="text-[10px] font-normal text-muted-foreground">ر.س</span></p>
+                    </div>
+                    <div className="bg-muted rounded-2xl p-3">
+                      <p className="text-[10px] text-muted-foreground mb-1">المتبقّي</p>
+                      <p className="text-base font-black text-accent">{(req.amount - req.funded).toLocaleString()} <span className="text-[10px] font-normal text-muted-foreground">ر.س</span></p>
+                    </div>
+                    <div className="bg-muted rounded-2xl p-3">
+                      <p className="text-[10px] text-muted-foreground mb-1 flex items-center gap-1"><Clock className="w-3 h-3" /> الوقت المتوقّع</p>
+                      <p className="text-base font-black text-foreground">{req.eta}</p>
+                    </div>
+                    <div className="bg-muted rounded-2xl p-3">
+                      <p className="text-[10px] text-muted-foreground mb-1 flex items-center gap-1"><RefreshCw className="w-3 h-3" /> آخر تحديث</p>
+                      <p className="text-base font-black text-foreground">{req.updated}</p>
+                    </div>
+                  </div>
 
-            {/* قائمة المساهمين بأسماء مقنّعة */}
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <Users className="w-4 h-4 text-accent" />
-                <h3 className="font-bold text-sm text-foreground">المساهمون ({ACTIVE_REQUEST.contributors.length})</h3>
-              </div>
-              <div className="space-y-2">
-                {(() => {
-                  const maxAmount = Math.max(...ACTIVE_REQUEST.contributors.map(c => c.amount));
-                  return ACTIVE_REQUEST.contributors.map((c, i) => {
-                    const sharePct = Math.round((c.amount / ACTIVE_REQUEST.amount) * 100);
-                    const barPct = Math.round((c.amount / maxAmount) * 100); // الوزن النسبي (الأكبر = ممتلئ)
-                    return (
-                      <div key={i} className="bg-muted rounded-xl px-3 py-2.5">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-full bg-accent/15 text-accent flex items-center justify-center text-xs font-black">
-                              {c.name.replace("مساهم ", "").charAt(0)}
-                            </div>
-                            <div>
-                              <p className="text-xs font-bold text-foreground">{c.name}</p>
-                              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full inline-flex items-center gap-1 ${
-                                c.status === "مؤكّدة"
-                                  ? "bg-green-500/15 text-green-600 dark:text-green-400"
-                                  : "bg-amber-500/15 text-amber-600 dark:text-amber-400"
-                              }`}>
-                                {c.status === "مؤكّدة" ? <CheckCircle2 className="w-2.5 h-2.5" /> : <Loader2 className="w-2.5 h-2.5" />}
-                                {c.status}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="text-left">
-                            <p className="text-xs font-black text-foreground">{c.amount.toLocaleString()} ر.س</p>
-                            <p className="text-[9px] text-muted-foreground">{sharePct}% من الطلب</p>
-                          </div>
-                        </div>
-                        {/* شريط الوزن النسبي للمساهم */}
-                        <div className="h-1.5 bg-background rounded-full overflow-hidden">
-                          <motion.div
-                            className="h-full bg-accent rounded-full"
-                            initial={{ width: 0 }}
-                            animate={{ width: `${barPct}%` }}
-                            transition={{ duration: 0.6, delay: 0.1 + i * 0.08, ease: "easeOut" }}
-                          />
+                  {/* شريط التقدّم المتحرّك */}
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className={`text-sm font-black ${fundedPct ? "text-green-600 dark:text-green-400" : "text-muted-foreground"}`}>{fundedPct}% مموّل</span>
+                      <span className="text-xs text-muted-foreground">{req.funded.toLocaleString()} من {req.amount.toLocaleString()} ر.س</span>
+                    </div>
+                    <div className="h-3 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-l from-green-500 to-emerald-400 rounded-full transition-all duration-1000 ease-out"
+                        style={{ width: `${(fundedPct * progress) / 100}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* قائمة المساهمين بأسماء مقنّعة */}
+                  {req.contributors.length > 0 ? (
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <Users className="w-4 h-4 text-accent" />
+                        <h3 className="font-bold text-sm text-foreground">المساهمون ({req.contributors.length})</h3>
+                      </div>
+                      <div className="space-y-2">
+                        {(() => {
+                          const maxAmount = Math.max(...req.contributors.map(c => c.amount));
+                          return req.contributors.map((c, i) => {
+                            const sharePct = Math.round((c.amount / req.amount) * 100);
+                            const barPct = Math.round((c.amount / maxAmount) * 100);
+                            return (
+                              <div key={i} className="bg-muted rounded-xl px-3 py-2.5">
+                                <div className="flex items-center justify-between mb-2">
+                                  <div className="flex items-center gap-2.5">
+                                    <div className="w-8 h-8 rounded-full bg-accent/15 text-accent flex items-center justify-center text-xs font-black">
+                                      {c.name.replace("مساهم ", "").charAt(0)}
+                                    </div>
+                                    <div>
+                                      <p className="text-xs font-bold text-foreground">{c.name}</p>
+                                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full inline-flex items-center gap-1 ${
+                                        c.status === "مؤكّدة"
+                                          ? "bg-green-500/15 text-green-600 dark:text-green-400"
+                                          : "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                                      }`}>
+                                        {c.status === "مؤكّدة" ? <CheckCircle2 className="w-2.5 h-2.5" /> : <Loader2 className="w-2.5 h-2.5" />}
+                                        {c.status}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <div className="text-left">
+                                    <p className="text-xs font-black text-foreground">{c.amount.toLocaleString()} ر.س</p>
+                                    <p className="text-[9px] text-muted-foreground">{sharePct}% من الطلب</p>
+                                  </div>
+                                </div>
+                                <div className="h-1.5 bg-background rounded-full overflow-hidden">
+                                  <motion.div
+                                    className="h-full bg-accent rounded-full"
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${barPct}%` }}
+                                    transition={{ duration: 0.6, delay: 0.1 + i * 0.08, ease: "easeOut" }}
+                                  />
+                                </div>
+                              </div>
+                            );
+                          });
+                        })()}
+                      </div>
+                      <p className="text-center text-[10px] text-muted-foreground mt-3 leading-relaxed">
+                        🔒 أسماء المساهمين مقنّعة حفاظاً على الخصوصية · يُدار عبر مصرف الإنماء
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="bg-muted rounded-2xl p-4 text-center">
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        طلبك قيد التقييم الائتماني — يُطرح للمساهمين فور اعتماده.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* إلغاء الطلب */}
+                  <div className="border-t border-border pt-4">
+                    {confirmCancelId !== req.id ? (
+                      <button
+                        onClick={() => setConfirmCancelId(req.id)}
+                        className="w-full flex items-center justify-center gap-1.5 text-xs font-bold text-red-600 dark:text-red-400 bg-red-500/10 border border-red-500/30 rounded-xl py-2.5 active:scale-95 transition-transform"
+                      >
+                        <Ban className="w-3.5 h-3.5" />
+                        إلغاء طلب التمويل
+                      </button>
+                    ) : (
+                      <div className="bg-red-500/10 border border-red-500/40 rounded-xl p-3 space-y-3">
+                        <p className="text-[11px] text-muted-foreground leading-relaxed">
+                          {req.funded > 0
+                            ? `سيُلغى طلبك وتُعاد مبالغ المساهمين المؤكّدة (${req.funded.toLocaleString()} ر.س) إلى حساباتهم خلال 3 أيام عمل.`
+                            : "سيُلغى طلبك. لم يُموَّل بعد، فلا مبالغ تُعاد."} لا يمكن التراجع بعد الإلغاء.
+                        </p>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => setConfirmCancelId(null)}
+                            className="flex-1 bg-muted text-foreground font-bold text-xs py-2.5 rounded-lg active:scale-95 transition-transform"
+                          >
+                            تراجع
+                          </button>
+                          <button
+                            onClick={() => {
+                              setRequests(prev => prev.filter(r => r.id !== req.id));
+                              setConfirmCancelId(null);
+                            }}
+                            className="flex-1 bg-red-500 text-white font-bold text-xs py-2.5 rounded-lg active:scale-95 transition-transform"
+                          >
+                            تأكيد الإلغاء
+                          </button>
                         </div>
                       </div>
-                    );
-                  });
-                })()}
-              </div>
-              <p className="text-center text-[10px] text-muted-foreground mt-3 leading-relaxed">
-                🔒 أسماء المساهمين مقنّعة حفاظاً على الخصوصية · يُدار عبر مصرف الإنماء
-              </p>
-            </div>
-
-            {/* إلغاء الطلب */}
-            <div className="border-t border-border pt-4">
-              {!confirmCancel ? (
-                <button
-                  onClick={() => setConfirmCancel(true)}
-                  className="w-full flex items-center justify-center gap-1.5 text-xs font-bold text-red-600 dark:text-red-400 bg-red-500/10 border border-red-500/30 rounded-xl py-2.5 active:scale-95 transition-transform"
-                >
-                  <Ban className="w-3.5 h-3.5" />
-                  إلغاء طلب التمويل
-                </button>
-              ) : (
-                <div className="bg-red-500/10 border border-red-500/40 rounded-xl p-3 space-y-3">
-                  <p className="text-[11px] text-muted-foreground leading-relaxed">
-                    سيُلغى طلبك وتُعاد مبالغ المساهمين المؤكّدة ({ACTIVE_REQUEST.funded.toLocaleString()} ر.س) إلى حساباتهم خلال 3 أيام عمل. لا يمكن التراجع بعد الإلغاء.
-                  </p>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setConfirmCancel(false)}
-                      className="flex-1 bg-muted text-foreground font-bold text-xs py-2.5 rounded-lg active:scale-95 transition-transform"
-                    >
-                      تراجع
-                    </button>
-                    <button
-                      onClick={() => { setRequestCancelled(true); setConfirmCancel(false); setShowTracking(false); }}
-                      className="flex-1 bg-red-500 text-white font-bold text-xs py-2.5 rounded-lg active:scale-95 transition-transform"
-                    >
-                      تأكيد الإلغاء
-                    </button>
+                    )}
                   </div>
                 </div>
-              )}
-            </div>
+              );
+            })}
           </motion.div>
         )}
         </AnimatePresence>

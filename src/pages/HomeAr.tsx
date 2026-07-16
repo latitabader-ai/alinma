@@ -1,5 +1,6 @@
 import { MobileContainer } from "@/components/MobileContainer";
-import { LogOut, Bell, Pencil, Eye, Receipt, SendHorizontal, Smartphone, Car, CreditCard } from "lucide-react";
+import { LogOut, Bell, Pencil, Eye, Receipt, SendHorizontal, Smartphone, Car, ChevronLeft } from "lucide-react";
+import { Link } from "wouter";
 import ThemeToggle from "@/components/ThemeToggle";
 import { useAccount } from "@/lib/AccountProvider";
 
@@ -46,12 +47,31 @@ export default function HomeAr() {
           <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-2 h-2 bg-accent rounded-full"></div>
         </div>
 
-        {/* Promo Banner */}
-        <div className="bg-card rounded-3xl h-24 mb-6 relative overflow-hidden flex items-center justify-end px-5 shadow-md border border-border">
-          <div className="absolute left-0 top-0 bottom-0 w-1/2 bg-muted"></div>
+        {/* Promo Banner — الإنماء فانتزي بخلفية السيارة */}
+        <div className="rounded-3xl h-28 mb-6 relative overflow-hidden flex items-center justify-end px-5 shadow-md border border-border bg-gradient-to-l from-[#2a2f3d] via-[#3d3038] to-[#4a3b3f]">
+          {/* أشكال قطرية خلفية */}
+          <div className="absolute inset-0 opacity-60" aria-hidden="true">
+            <svg viewBox="0 0 400 112" preserveAspectRatio="none" className="w-full h-full">
+              <path d="M0 0 L120 0 L70 112 L0 112 Z" fill="#b08b8b" opacity="0.35" />
+              <path d="M150 0 L260 0 L200 112 L90 112 Z" fill="#b08b8b" opacity="0.22" />
+            </svg>
+          </div>
+          {/* ظلّ السيارة */}
+          <div className="absolute left-2 bottom-1 w-[58%] opacity-90" aria-hidden="true">
+            <svg viewBox="0 0 240 80" className="w-full h-auto">
+              <g fill="#c9ccd4">
+                <path d="M14 62 Q10 48 28 45 L58 41 Q78 22 112 20 L150 20 Q182 23 202 42 L224 48 Q236 52 232 62 Z" />
+                <path d="M70 41 Q86 27 112 26 L146 26 Q170 28 188 43 Z" fill="#8b94a6" />
+              </g>
+              <circle cx="66" cy="62" r="13" fill="#1c1f27" />
+              <circle cx="66" cy="62" r="6" fill="#c9ccd4" />
+              <circle cx="188" cy="62" r="13" fill="#1c1f27" />
+              <circle cx="188" cy="62" r="6" fill="#c9ccd4" />
+            </svg>
+          </div>
           <div className="z-10 text-right">
-            <h3 className="text-foreground font-bold text-lg">الإنماء فانتزي</h3>
-            <p className="text-accent text-sm">توقع واربح!</p>
+            <h3 className="text-white font-bold text-lg drop-shadow">الإنماء فانتزي</h3>
+            <p className="text-[#e8a598] text-sm font-medium drop-shadow">توقّع واربح!</p>
           </div>
         </div>
 
@@ -72,20 +92,47 @@ export default function HomeAr() {
           ))}
         </div>
 
-        {/* Promo Card */}
-        <div className="bg-gradient-to-br from-accent to-orange-200 dark:to-orange-900/50 rounded-3xl p-5 relative overflow-hidden shadow-md">
-           <div className="flex justify-between items-start mb-2">
-              <div className="font-bold text-xl italic text-accent-foreground/70">airalo</div>
-              <div className="bg-black/10 px-2 py-1 rounded text-[10px] font-bold text-accent-foreground">أكثـر akthr</div>
-           </div>
-           <h3 className="font-bold text-2xl mb-1 text-accent-foreground">بنقطتين</h3>
-           <div className="bg-black/20 text-white px-3 py-1 rounded-full inline-block text-xs font-medium mb-1">خصم 20%</div>
-           <p className="text-xs font-bold mb-5 text-accent-foreground">+ 10 نقاط إضافية في أكثر</p>
-           <p className="text-[8px] opacity-70 text-accent-foreground">تطبق الشروط والأحكام</p>
-           <div className="absolute left-0 bottom-0 opacity-20">
-             <CreditCard className="w-24 h-24 -ml-4 -mb-4 text-accent-foreground" />
-           </div>
-        </div>
+        {/* Promo Card — إعلان التمويل الجماعي */}
+        <Link href="/crowd-finance">
+          <div className="bg-gradient-to-br from-accent to-orange-500 rounded-3xl p-5 relative overflow-hidden shadow-md cursor-pointer active:scale-[0.98] transition-transform">
+            {/* خلفية: مساهمون يلتقون حول هدف واحد */}
+            <div className="absolute inset-0 opacity-25" aria-hidden="true">
+              <svg viewBox="0 0 320 160" preserveAspectRatio="xMidYMid slice" className="w-full h-full">
+                <circle cx="60" cy="132" r="46" fill="none" stroke="#fff" strokeWidth="1.5" />
+                <circle cx="60" cy="132" r="70" fill="none" stroke="#fff" strokeWidth="1" opacity="0.6" />
+                {/* أفراد مساهمون */}
+                {[
+                  [24, 66], [58, 50], [92, 62], [124, 84],
+                ].map(([x, y], i) => (
+                  <g key={i} fill="#fff">
+                    <circle cx={x} cy={y} r="7" />
+                    <path d={`M${x - 11} ${y + 22} a11 13 0 0 1 22 0 Z`} />
+                  </g>
+                ))}
+                {/* خطوط تدفّق المال نحو الهدف */}
+                {[[24, 66], [58, 50], [92, 62], [124, 84]].map(([x, y], i) => (
+                  <path key={i} d={`M${x} ${y + 26} Q${(x + 60) / 2} 108 60 128`} fill="none" stroke="#fff" strokeWidth="1.2" strokeDasharray="3 3" opacity="0.8" />
+                ))}
+                <circle cx="60" cy="132" r="12" fill="#fff" />
+              </svg>
+            </div>
+
+            <div className="relative z-10">
+              <div className="flex justify-between items-start mb-3">
+                <span className="bg-white/25 px-2.5 py-1 rounded-full text-[10px] font-black text-white">شارِك</span>
+                <span className="bg-white/20 px-2 py-1 rounded text-[10px] font-bold text-white">متوافق مع الشريعة</span>
+              </div>
+              <h3 className="font-black text-2xl mb-2 text-white">التمويل الجماعي</h3>
+              <p className="text-xs text-white/95 leading-relaxed mb-4 max-w-[85%]">
+                يشترك عدة مساهمين في تمويل طلبك — تحصل على ما تريد اليوم وتسدّده بأقساط،
+                وهم يربحون عائداً حلالاً من ربح المرابحة.
+              </p>
+              <span className="bg-white text-accent px-3 py-1.5 rounded-full inline-flex items-center gap-1 text-xs font-black">
+                ابدأ الآن <ChevronLeft className="w-3.5 h-3.5" />
+              </span>
+            </div>
+          </div>
+        </Link>
       </div>
     </MobileContainer>
   );
