@@ -9,6 +9,7 @@ import { SAIBOR_3M, RISK_SPREAD, returnRateFor, maturityLabel, FIRST_PAYOUT_AFTE
 import { Slider } from "@/components/ui/slider";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import RepaymentSchedule from "@/components/RepaymentSchedule";
 
 // خطّاف حركة رقمية تصاعدية (Count-up) — يعطي إحساساً بالنمو المالي
 function useCountUp(target: number, duration = 900) {
@@ -531,7 +532,7 @@ export default function Investments() {
             const maxContrib = activeOpp.goal - activeOpp.raised;
             const annualReturn = Math.round(contribAmt * activeOpp.retPct / 100);
             return (
-              <div className="text-right space-y-4">
+              <div className="text-right space-y-4 max-h-[75vh] overflow-y-auto pl-1">
                 <DialogHeader>
                   <DialogTitle className="text-right flex items-center gap-2 text-foreground">
                     <span className="w-9 h-9 bg-muted rounded-xl flex items-center justify-center text-accent">{activeOpp.icon}</span>
@@ -612,6 +613,13 @@ export default function Investments() {
                     </p>
                   </div>
                 </div>
+
+                {/* جدول السداد الشهري المتراكم — يوضّح متى يعود رأس المال */}
+                <RepaymentSchedule
+                  amount={contribAmt}
+                  months={activeOpp.months}
+                  retPct={activeOpp.retPct}
+                />
 
                 <div className="flex items-start gap-2 text-[10px] text-muted-foreground leading-relaxed">
                   <ShieldCheck className="w-3.5 h-3.5 text-green-500 shrink-0 mt-0.5" />
