@@ -130,7 +130,7 @@ function smartAllocate(total: number, opps: Opp[]): Alloc[] {
     .filter(a => a.amount > 0);
 }
 
-type FundingView = "mine" | "opps" | "smart";
+type FundingView = "mine" | "opps";
 
 export default function Investments() {
   const [tab, setTab] = useState<Tab>("funding");
@@ -293,12 +293,11 @@ export default function Investments() {
           {tab === "funding" && (
             <div className="space-y-4">
 
-              {/* ===== أقسام فرعية: مساهماتي · الفرص · الاستثمار الذكي ===== */}
-              <div className="grid grid-cols-3 gap-1.5 bg-muted rounded-2xl p-1">
+              {/* ===== قسمان: مساهماتي · فرص التمويل (يضمّ الاستثمار الذكي) ===== */}
+              <div className="grid grid-cols-2 gap-1.5 bg-muted rounded-2xl p-1">
                 {([
                   { k: "mine",  label: "مساهماتي" },
                   { k: "opps",  label: "فرص التمويل" },
-                  { k: "smart", label: "الاستثمار الذكي" },
                 ] as { k: FundingView; label: string }[]).map(({ k, label }) => (
                   <button
                     key={k}
@@ -359,10 +358,14 @@ export default function Investments() {
               </div>
               )}
 
-              {/* ===== قسم الاستثمار الذكي ===== */}
-              {fundingView === "smart" && (
+              {/* ===== قسم فرص التمويل (يضمّ الاستثمار الذكي أعلاه) ===== */}
+              {fundingView === "opps" && (
               <div className="space-y-4">
-              {/* ===== الاستثمار الذكي التلقائي (توزيع المخاطر) ===== */}
+              <div>
+                <h2 className="text-base font-black text-foreground mb-1">فرص تمويل للمساهمة</h2>
+                <p className="text-muted-foreground text-xs leading-relaxed">ساهم بمالك في فرص اجتازت تقييم المخاطر · عائد حلال من ربح المرابحة</p>
+              </div>
+              {/* ===== الاستثمار الذكي التلقائي (توزيع المخاطر) — أعلى الفرص ===== */}
               <div className="bg-gradient-to-l from-accent/20 to-primary/10 border-2 border-accent/40 rounded-2xl p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <Sparkles className="w-5 h-5 text-accent" />
@@ -499,16 +502,6 @@ export default function Investments() {
                   </motion.div>
                 )}
               </AnimatePresence>
-              </div>
-              )}
-
-              {/* ===== قسم فرص التمويل ===== */}
-              {fundingView === "opps" && (
-              <div className="space-y-4">
-              <div>
-                <h2 className="text-base font-black text-foreground mb-1">فرص تمويل للمساهمة</h2>
-                <p className="text-muted-foreground text-xs leading-relaxed mb-3">ساهم بمالك في فرص اجتازت تقييم المخاطر · عائد حلال من ربح المرابحة</p>
-              </div>
 
               {opps.map(opp => {
                 const pct = Math.round((opp.raised / opp.goal) * 100);
