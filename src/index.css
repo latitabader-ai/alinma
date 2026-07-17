@@ -119,7 +119,7 @@
   --sidebar-primary-foreground: 0 0% 100%;
   --sidebar-accent: 211 53% 95%;
   --sidebar-accent-foreground: 211 53% 11%;
-  --sidebar-ring: 211 80% 33%;
+  --sidebar-ring: 14 70% 42%;
   
   --popover: 0 0% 100%;
   --popover-foreground: 211 53% 11%;
@@ -134,17 +134,17 @@
   --muted: 211 20% 92%;
   --muted-foreground: 211 25% 40%;
   
-  /* أزرق الإنماء العميق — لون الإجراءات. الأحمر محجوز للتحذير وحده */
-  --accent: 211 80% 33%; /* #0F5299 */
+  /* مرجاني دافئ أغمق من الخلفية الفاتحة — لون الإجراءات. الأحمر محجوز للتحذير وحده */
+  --accent: 14 70% 42%; /* #CE5233 مرجاني/برتقالي غامق */
   --accent-foreground: 0 0% 100%;
 
-  --destructive: 0 84% 60%;
+  --destructive: 0 84% 55%;
   --destructive-foreground: 0 0% 100%;
 
   --input: 211 25% 88%;
-  --ring: 211 80% 33%;
+  --ring: 14 70% 42%;
 
-  --chart-1: 211 80% 33%;
+  --chart-1: 14 70% 42%;
   --chart-2: 211 53% 40%;
   --chart-3: 160 60% 45%;
   --chart-4: 43 74% 66%;
@@ -197,25 +197,25 @@
   --sidebar-primary-foreground: 0 0% 100%;
   --sidebar-accent: 211 53% 22%;
   --sidebar-accent-foreground: 0 0% 100%;
-  --sidebar-ring: 205 90% 65%;
+  --sidebar-ring: 12 90% 72%;
   --popover: 211 53% 15%;
   --popover-foreground: 0 0% 100%;
   --popover-border: 211 40% 25%;
-  /* في الداكن الخلفية كحلية، فالأزرق العميق يختفي عليها.
-     نرفع الإضاءة ونضع نصاً كحلياً فوقه — تباين سليم في الاتجاهين. */
-  --primary: 205 90% 65%;
+  /* في الداكن: وردي/مرجاني فاتح دافئ — يتدرّج للبرتقالي على البطاقات البارزة.
+     نص كحلي فوقه لتباين سليم. الأحمر يبقى للتحذير وحده. */
+  --primary: 12 90% 72%;
   --primary-foreground: 211 53% 11%;
   --secondary: 211 53% 20%;
   --secondary-foreground: 0 0% 90%;
   --muted: 211 40% 18%;
   --muted-foreground: 211 25% 65%;
-  --accent: 205 90% 65%;            /* #5EC1F7 */
-  --accent-foreground: 211 53% 11%; /* نص كحلي فوق الأزرق الفاتح */
-  --destructive: 0 84% 60%;
+  --accent: 12 90% 72%;             /* #F5977A وردي/مرجاني فاتح */
+  --accent-foreground: 211 53% 11%; /* نص كحلي فوق الوردي الفاتح */
+  --destructive: 0 84% 62%;
   --destructive-foreground: 0 0% 100%;
   --input: 211 40% 22%;
-  --ring: 205 90% 65%;
-  --chart-1: 205 90% 65%;
+  --ring: 12 90% 72%;
+  --chart-1: 12 90% 72%;
   --chart-2: 211 53% 55%;
   --chart-3: 160 60% 45%;
   --chart-4: 43 74% 66%;

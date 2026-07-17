@@ -290,44 +290,49 @@ export default function Investments() {
           {tab === "funding" && (
             <div className="space-y-5">
 
-              {/* ملخّص مساهماتي */}
-              <div className="bg-gradient-to-l from-accent/15 to-primary/10 border border-accent/30 rounded-2xl p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <HandCoins className="w-5 h-5 text-accent" />
-                  <h3 className="font-black text-foreground text-sm">مساهماتي الحالية</h3>
-                </div>
-                <div className="flex justify-between mb-3">
-                  <div>
-                    <p className="text-[10px] text-muted-foreground">إجمالي المستثمر</p>
-                    <p className="text-lg font-black text-foreground tabular-nums">{animatedTotal.toLocaleString()} <span className="text-[10px] font-normal text-muted-foreground">ر.س</span></p>
-                  </div>
-                  <div className="text-left">
-                    <p className="text-[10px] text-muted-foreground">متوسط العائد المتوقّع</p>
-                    <p className="text-lg font-black text-accent">{avgRet}%</p>
-                  </div>
-                </div>
-                {/* الرصيد المتاح — يتناقص عند المساهمة */}
-                <div className="flex items-center justify-between border-t border-border/50 pt-2.5">
-                  <span className="text-[10px] text-muted-foreground flex items-center gap-1"><Wallet className="w-3 h-3" /> الرصيد المتاح في الحساب الجاري</span>
-                  <span className="text-sm font-black text-foreground tabular-nums">{animatedBalance.toLocaleString()} ر.س</span>
-                </div>
-              </div>
+              {/* ===== محفظة التمويل الجماعي — مربع واحد يجمع مساهماتي والفرص ===== */}
+              <div className="bg-card border border-border rounded-3xl p-4 space-y-4 shadow-sm">
 
-              {/* قائمة مساهماتي */}
-              <div className="space-y-2">
-                {myContribs.map((c, i) => (
-                  <div key={i} className="flex items-center justify-between bg-card rounded-xl px-4 py-3 border border-border">
-                    <div className="flex items-center gap-2.5">
-                      <span className={`w-2 h-2 rounded-full ${LC[c.level].dot}`} />
-                      <div>
-                        <p className="text-xs font-bold text-foreground">{c.title}</p>
-                        <p className="text-[9px] text-muted-foreground">{c.status} · عائد {c.retPct}%</p>
-                      </div>
-                    </div>
-                    <span className="text-sm font-black text-foreground">{c.amount.toLocaleString()} ر.س</span>
+                {/* رأس: ملخّص مساهماتي */}
+                <div className="bg-gradient-to-l from-accent/15 to-primary/10 border border-accent/30 rounded-2xl p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <HandCoins className="w-5 h-5 text-accent" />
+                    <h3 className="font-black text-foreground text-sm">مساهماتي الحالية</h3>
                   </div>
-                ))}
-              </div>
+                  <div className="flex justify-between mb-3">
+                    <div>
+                      <p className="text-[10px] text-muted-foreground">إجمالي المستثمر</p>
+                      <p className="text-lg font-black text-foreground tabular-nums">{animatedTotal.toLocaleString()} <span className="text-[10px] font-normal text-muted-foreground">ر.س</span></p>
+                    </div>
+                    <div className="text-left">
+                      <p className="text-[10px] text-muted-foreground">متوسط العائد المتوقّع</p>
+                      <p className="text-lg font-black text-accent">{avgRet}%</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between border-t border-border/50 pt-2.5">
+                    <span className="text-[10px] text-muted-foreground flex items-center gap-1"><Wallet className="w-3 h-3" /> الرصيد المتاح في الحساب الجاري</span>
+                    <span className="text-sm font-black text-foreground tabular-nums">{animatedBalance.toLocaleString()} ر.س</span>
+                  </div>
+                </div>
+
+                {/* قائمة مساهماتي */}
+                <div className="space-y-2">
+                  {myContribs.map((c, i) => (
+                    <div key={i} className="flex items-center justify-between bg-muted rounded-xl px-4 py-3">
+                      <div className="flex items-center gap-2.5">
+                        <span className={`w-2 h-2 rounded-full ${LC[c.level].dot}`} />
+                        <div>
+                          <p className="text-xs font-bold text-foreground">{c.title}</p>
+                          <p className="text-[9px] text-muted-foreground">{c.status} · عائد {c.retPct}%</p>
+                        </div>
+                      </div>
+                      <span className="text-sm font-black text-foreground">{c.amount.toLocaleString()} ر.س</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* فاصل */}
+                <div className="border-t border-border" />
 
               {/* ===== الاستثمار الذكي التلقائي (توزيع المخاطر) ===== */}
               <div className="bg-gradient-to-l from-accent/20 to-primary/10 border-2 border-accent/40 rounded-2xl p-4">
@@ -467,7 +472,8 @@ export default function Investments() {
                 )}
               </AnimatePresence>
 
-              {/* فرص التمويل للمساهمة */}
+              {/* فاصل ثم فرص التمويل للمساهمة */}
+              <div className="border-t border-border" />
               <div>
                 <h2 className="text-base font-black text-foreground mb-1">فرص تمويل للمساهمة</h2>
                 <p className="text-muted-foreground text-xs leading-relaxed mb-3">ساهم بمالك في فرص اجتازت تقييم المخاطر · عائد حلال من ربح المرابحة</p>
@@ -477,10 +483,10 @@ export default function Investments() {
                 const pct = Math.round((opp.raised / opp.goal) * 100);
                 const remaining = opp.goal - opp.raised;
                 return (
-                  <div key={opp.id} className="bg-card rounded-2xl p-5 border border-border">
+                  <div key={opp.id} className="bg-muted rounded-2xl p-5 border border-border">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-muted rounded-xl flex items-center justify-center text-accent">
+                        <div className="w-10 h-10 bg-background rounded-xl flex items-center justify-center text-accent">
                           {opp.icon}
                         </div>
                         <div>
@@ -501,7 +507,7 @@ export default function Investments() {
                       </div>
                     </div>
 
-                    <div className="h-2 bg-muted rounded-full overflow-hidden mb-1.5">
+                    <div className="h-2 bg-background rounded-full overflow-hidden mb-1.5">
                       <div className={`h-full rounded-full transition-all duration-700 ${LC[opp.level].bar}`} style={{ width: `${pct}%` }} />
                     </div>
                     <div className="flex justify-between text-xs mb-4">
@@ -516,9 +522,10 @@ export default function Investments() {
                 );
               })}
 
-              <p className="text-center text-[10px] text-muted-foreground leading-relaxed">
-                🔒 كل فرصة مرّت بمحرّك تقييم المخاطر · تُدار عبر مصرف الإنماء بالتوافق مع أنظمة ساما ومبادئ التمويل الإسلامي
-              </p>
+                <p className="text-center text-[10px] text-muted-foreground leading-relaxed">
+                  🔒 كل فرصة مرّت بمحرّك تقييم المخاطر · تُدار عبر مصرف الإنماء بالتوافق مع أنظمة ساما ومبادئ التمويل الإسلامي
+                </p>
+              </div>{/* /محفظة التمويل الجماعي */}
             </div>
           )}
 
