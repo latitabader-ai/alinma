@@ -58,7 +58,7 @@ pip install -r requirements.txt
 uvicorn main:app --reload --port 8000
 ```
 
-الواجهة تقرأ عنوان الـ API من متغيّر البيئة `VITE_API_URL` (راجعي `.env.example`).
+الواجهة تقرأ عنوان الـ API من متغيّر البيئة `VITE_API_URL` .
 
 ## بنية المشروع
 
