@@ -1,0 +1,872 @@
+{
+ "REQ-1000": [
+  {
+   "date": "2026-01-18",
+   "amount": 12015,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-01-20",
+   "amount": 750,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-02-17",
+   "amount": 11834,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-02-19",
+   "amount": 750,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-03-19",
+   "amount": 12527,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-03-21",
+   "amount": 750,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-04-18",
+   "amount": 12430,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-04-20",
+   "amount": 750,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-05-18",
+   "amount": 12295,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-05-20",
+   "amount": 750,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-06-20",
+   "amount": 413,
+   "type": "credit",
+   "desc": "تحويل وارد"
+  },
+  {
+   "date": "2026-06-22",
+   "amount": 1026,
+   "type": "credit",
+   "desc": "تحويل وارد"
+  }
+ ],
+ "REQ-1001": [
+  {
+   "date": "2026-01-18",
+   "amount": 18378,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-01-20",
+   "amount": 4850,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-02-03",
+   "amount": 1783,
+   "type": "credit",
+   "desc": "تحويل وارد"
+  },
+  {
+   "date": "2026-02-17",
+   "amount": 18361,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-02-19",
+   "amount": 4850,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-03-19",
+   "amount": 18451,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-03-21",
+   "amount": 4850,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-04-18",
+   "amount": 18954,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-04-20",
+   "amount": 4850,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-05-08",
+   "amount": 2476,
+   "type": "credit",
+   "desc": "تحويل وارد"
+  },
+  {
+   "date": "2026-05-18",
+   "amount": 18649,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-05-20",
+   "amount": 4850,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-05-21",
+   "amount": 1775,
+   "type": "credit",
+   "desc": "تحويل وارد"
+  },
+  {
+   "date": "2026-06-17",
+   "amount": 18776,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-06-19",
+   "amount": 4850,
+   "type": "debit",
+   "desc": "سداد التزام"
+  }
+ ],
+ "REQ-1002": [
+  {
+   "date": "2026-01-18",
+   "amount": 13266,
+   "type": "credit",
+   "desc": "إيداع"
+  },
+  {
+   "date": "2026-01-20",
+   "amount": 4050,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-02-14",
+   "amount": 346,
+   "type": "credit",
+   "desc": "تحويل وارد"
+  },
+  {
+   "date": "2026-03-19",
+   "amount": 1417,
+   "type": "credit",
+   "desc": "تحويل وارد"
+  },
+  {
+   "date": "2026-04-10",
+   "amount": 1571,
+   "type": "credit",
+   "desc": "تحويل وارد"
+  },
+  {
+   "date": "2026-04-18",
+   "amount": 19446,
+   "type": "credit",
+   "desc": "إيداع"
+  },
+  {
+   "date": "2026-04-20",
+   "amount": 4050,
+   "type": "debit",
+   "desc": "سداد التزام"
+  }
+ ],
+ "REQ-1003": [
+  {
+   "date": "2026-01-18",
+   "amount": 17413,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-01-20",
+   "amount": 4050,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-02-17",
+   "amount": 17080,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-02-19",
+   "amount": 4050,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-03-02",
+   "amount": 1961,
+   "type": "credit",
+   "desc": "تحويل وارد"
+  },
+  {
+   "date": "2026-03-19",
+   "amount": 16858,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-03-21",
+   "amount": 4050,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-04-18",
+   "amount": 17598,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-04-20",
+   "amount": 4050,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-05-18",
+   "amount": 17213,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-05-20",
+   "amount": 4050,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-06-14",
+   "amount": 1717,
+   "type": "credit",
+   "desc": "تحويل وارد"
+  },
+  {
+   "date": "2026-06-17",
+   "amount": 17433,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-06-19",
+   "amount": 4050,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-06-29",
+   "amount": 2449,
+   "type": "credit",
+   "desc": "تحويل وارد"
+  }
+ ],
+ "REQ-1004": [
+  {
+   "date": "2026-01-18",
+   "amount": 7761,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-01-20",
+   "amount": 350,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-02-17",
+   "amount": 7659,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-02-19",
+   "amount": 350,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-03-17",
+   "amount": 2057,
+   "type": "credit",
+   "desc": "تحويل وارد"
+  },
+  {
+   "date": "2026-03-19",
+   "amount": 8336,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-03-21",
+   "amount": 350,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-04-18",
+   "amount": 7255,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-04-20",
+   "amount": 350,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-06-17",
+   "amount": 7738,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-06-19",
+   "amount": 350,
+   "type": "debit",
+   "desc": "سداد التزام"
+  }
+ ],
+ "REQ-1005": [
+  {
+   "date": "2026-01-18",
+   "amount": 4675,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-01-20",
+   "amount": 1550,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-02-17",
+   "amount": 4878,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-02-19",
+   "amount": 1550,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-03-19",
+   "amount": 4759,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-03-21",
+   "amount": 1550,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-04-18",
+   "amount": 4786,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-04-20",
+   "amount": 1550,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-05-18",
+   "amount": 4657,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-05-20",
+   "amount": 1550,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-06-17",
+   "amount": 4711,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-06-19",
+   "amount": 1550,
+   "type": "debit",
+   "desc": "سداد التزام"
+  }
+ ],
+ "REQ-1006": [
+  {
+   "date": "2026-01-18",
+   "amount": 16562,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-01-20",
+   "amount": 1300,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-02-17",
+   "amount": 16546,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-02-19",
+   "amount": 1300,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-03-19",
+   "amount": 16169,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-03-21",
+   "amount": 1300,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-04-18",
+   "amount": 16178,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-04-20",
+   "amount": 1300,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-05-10",
+   "amount": 1110,
+   "type": "credit",
+   "desc": "تحويل وارد"
+  },
+  {
+   "date": "2026-05-18",
+   "amount": 16406,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-05-20",
+   "amount": 1300,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-06-17",
+   "amount": 16254,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-06-19",
+   "amount": 1300,
+   "type": "debit",
+   "desc": "سداد التزام"
+  }
+ ],
+ "REQ-1007": [
+  {
+   "date": "2026-02-17",
+   "amount": 20248,
+   "type": "credit",
+   "desc": "إيداع"
+  },
+  {
+   "date": "2026-02-19",
+   "amount": 2850,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-04-20",
+   "amount": 668,
+   "type": "credit",
+   "desc": "تحويل وارد"
+  },
+  {
+   "date": "2026-05-05",
+   "amount": 1591,
+   "type": "credit",
+   "desc": "تحويل وارد"
+  },
+  {
+   "date": "2026-05-18",
+   "amount": 22485,
+   "type": "credit",
+   "desc": "إيداع"
+  },
+  {
+   "date": "2026-05-20",
+   "amount": 2850,
+   "type": "debit",
+   "desc": "سداد التزام"
+  }
+ ],
+ "REQ-1008": [
+  {
+   "date": "2026-01-27",
+   "amount": 436,
+   "type": "credit",
+   "desc": "تحويل وارد"
+  },
+  {
+   "date": "2026-02-17",
+   "amount": 11697,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-02-19",
+   "amount": 4750,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-03-19",
+   "amount": 10624,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-03-21",
+   "amount": 4750,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-04-18",
+   "amount": 10845,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-04-20",
+   "amount": 4750,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-05-18",
+   "amount": 12486,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-05-20",
+   "amount": 4750,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-06-17",
+   "amount": 11628,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-06-19",
+   "amount": 4750,
+   "type": "debit",
+   "desc": "سداد التزام"
+  }
+ ],
+ "REQ-1009": [
+  {
+   "date": "2026-01-24",
+   "amount": 2457,
+   "type": "credit",
+   "desc": "تحويل وارد"
+  },
+  {
+   "date": "2026-02-02",
+   "amount": 1372,
+   "type": "credit",
+   "desc": "تحويل وارد"
+  },
+  {
+   "date": "2026-02-17",
+   "amount": 9821,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-02-19",
+   "amount": 2700,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-03-19",
+   "amount": 7271,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-03-21",
+   "amount": 2700,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-04-18",
+   "amount": 8386,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-04-20",
+   "amount": 2700,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-05-18",
+   "amount": 9455,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-05-20",
+   "amount": 2700,
+   "type": "debit",
+   "desc": "سداد التزام"
+  }
+ ],
+ "REQ-1010": [
+  {
+   "date": "2026-01-18",
+   "amount": 14604,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-01-20",
+   "amount": 4450,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-01-27",
+   "amount": 1139,
+   "type": "credit",
+   "desc": "تحويل وارد"
+  },
+  {
+   "date": "2026-02-17",
+   "amount": 14588,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-02-19",
+   "amount": 4450,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-03-19",
+   "amount": 14372,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-03-21",
+   "amount": 4450,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-04-04",
+   "amount": 1804,
+   "type": "credit",
+   "desc": "تحويل وارد"
+  },
+  {
+   "date": "2026-04-18",
+   "amount": 14530,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-04-20",
+   "amount": 4450,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-05-18",
+   "amount": 14482,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-05-20",
+   "amount": 4450,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-06-17",
+   "amount": 14576,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-06-19",
+   "amount": 4450,
+   "type": "debit",
+   "desc": "سداد التزام"
+  }
+ ],
+ "REQ-1011": [
+  {
+   "date": "2026-01-18",
+   "amount": 7697,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-01-20",
+   "amount": 700,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-02-05",
+   "amount": 1524,
+   "type": "credit",
+   "desc": "تحويل وارد"
+  },
+  {
+   "date": "2026-02-10",
+   "amount": 2154,
+   "type": "credit",
+   "desc": "تحويل وارد"
+  },
+  {
+   "date": "2026-02-17",
+   "amount": 7534,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-02-19",
+   "amount": 700,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-03-19",
+   "amount": 7566,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-03-21",
+   "amount": 700,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-04-18",
+   "amount": 6719,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-04-20",
+   "amount": 700,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-05-18",
+   "amount": 7327,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-05-20",
+   "amount": 700,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-06-17",
+   "amount": 7381,
+   "type": "credit",
+   "desc": "إيداع راتب"
+  },
+  {
+   "date": "2026-06-19",
+   "amount": 700,
+   "type": "debit",
+   "desc": "سداد التزام"
+  },
+  {
+   "date": "2026-06-28",
+   "amount": 1247,
+   "type": "credit",
+   "desc": "تحويل وارد"
+  }
+ ]
+}

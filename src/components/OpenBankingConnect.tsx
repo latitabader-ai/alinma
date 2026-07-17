@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { CheckCircle2, Loader2, Building2, FileText, Wallet, ShieldCheck, Lock, Landmark, Gauge, ChevronLeft } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useAccount } from "@/lib/AccountProvider";
+import { useAccount, type Txn } from "@/lib/AccountProvider";
 
 // ============================================================
 //  OpenBankingConnect — تجربة المصرفية المفتوحة الكاملة (قابلة لإعادة الاستخدام)
@@ -27,11 +27,11 @@ const OB_BANKS = [
 ];
 
 interface Props {
-  onFilled: (data: { salary: number; oblig: number; credit: number }) => void;
+  onFilled: (data: { salary: number; oblig: number; credit: number; transactions: Txn[] }) => void;
 }
 
 export default function OpenBankingConnect({ onFilled }: Props) {
-  const { balance, salary: obSalary, oblig: obOblig, creditScore, accountMask } = useAccount();
+  const { balance, salary: obSalary, oblig: obOblig, creditScore, accountMask, transactions } = useAccount();
 
   const [obStatus, setObStatus] = useState<ObStatus>("idle");
   const [obStep, setObStep] = useState(0);
@@ -68,7 +68,7 @@ export default function OpenBankingConnect({ onFilled }: Props) {
     });
     setTimeout(() => {
       setObStatus("done");
-      onFilled({ salary: obSalary, oblig: obOblig, credit: creditScore });
+      onFilled({ salary: obSalary, oblig: obOblig, credit: creditScore, transactions });
     }, stepMs * (OB_STEPS.length + 1));
   }
 

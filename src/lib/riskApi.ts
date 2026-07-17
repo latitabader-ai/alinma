@@ -13,6 +13,13 @@ export interface ApiAssess {
   modelAccuracy: number;        // الدقة الإجمالية %
   highRiskPrecision?: number;   // دقة التنبؤ بالحالات المرتفعة الخطورة %
   highRiskRecall?: number;      // نسبة اكتشاف الحالات المرتفعة %
+  incomeConfidence?: {          // تحقّق الدخل من كشف الحساب — كل رقم محسوب
+    score: number;
+    label: string;
+    detected_income: number | null;
+    deposits_count: number;
+    evidence: string;
+  };
   importances: { name: string; value: number }[];
 }
 
@@ -26,6 +33,8 @@ export interface AssessPayload {
   tenure: number;
   emp: string;
   age?: number;
+  // كشف الحساب — منه يحتسب النموذج ثقة الدخل بدل تصديق المُصرَّح
+  transactions?: { date: string; amount: number; type: string; desc?: string }[];
 }
 
 // عنوان الـ API — الافتراضي هو خادم Render المستضاف (يعمل على الموقع الحيّ مباشرة).

@@ -13,6 +13,22 @@ interface AccountData {
   statement: string;    // ملخّص كشف الحساب
   creditScore: number;  // التصنيف الائتماني (سمة)
   accountMask: string;  // آخر أرقام الحساب (مقنّع)
+  transactions: Txn[];  // كشف الحساب — منه تُحتسب ثقة الدخل
+}
+
+export interface Txn { date: string; amount: number; type: "credit" | "debit"; desc: string }
+
+// كشف حساب متّسق مع الملف: راتب منتظم 18,500 + خصم التزام 1,800
+function buildStatement(salary: number, oblig: number, months = 6): Txn[] {
+  const out: Txn[] = [];
+  const now = new Date();
+  for (let m = months; m > 0; m--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - m, 27);
+    out.push({ date: d.toISOString().slice(0, 10), amount: salary + ((m * 37) % 120), type: "credit", desc: "إيداع راتب" });
+    const d2 = new Date(now.getFullYear(), now.getMonth() - m, 29);
+    out.push({ date: d2.toISOString().slice(0, 10), amount: oblig, type: "debit", desc: "سداد التزام" });
+  }
+  return out;
 }
 
 interface AccountContextType extends AccountData {
@@ -29,6 +45,7 @@ const INITIAL: AccountData = {
   statement: "12 شهراً · تدفقات منتظمة",
   creditScore: 730,
   accountMask: "•••• 6000",
+  transactions: buildStatement(18500, 1800),
 };
 
 const AccountContext = createContext<AccountContextType | undefined>(undefined);

@@ -13,6 +13,7 @@
 # ============================================================
 
 import os
+import sys
 import csv
 import numpy as np
 from fastapi import FastAPI
@@ -24,15 +25,19 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import accuracy_score, precision_score, recall_score
 
 # مسار البيانات (قابل للتهيئة عبر متغيّر بيئة)
-DATA_PATH = os.environ.get(
-    "DATA_PATH",
-    os.path.join(os.path.dirname(__file__), "..", "ml", "tamweel_data.csv"),
-)
+ML_DIR = os.path.join(os.path.dirname(__file__), "..", "ml")
+DATA_PATH = os.environ.get("DATA_PATH", os.path.join(ML_DIR, "tamweel_data.csv"))
+
+# نستورد دالة ثقة الدخل من ml/ لتبقى مصدراً واحداً للحقيقة:
+# نفس الدالة التي وُلِّدت بها بيانات التدريب تُستخدم وقت التنبؤ.
+sys.path.insert(0, os.path.abspath(ML_DIR))
+from income_confidence import calculate_income_confidence  # noqa: E402
 MARGIN_RATE = 0.065  # نسبة ربح المرابحة السنوية (نفس منطق الواجهة)
 
 NUM_FEATURES = ["العمر", "مدة_التوظيف_شهر", "الراتب_الشهري",
                 "الالتزامات_الشهرية", "التصنيف_الائتماني", "مبلغ_التمويل",
-                "مدة_السداد_شهر", "القسط_الشهري_الجديد", "نسبة_عبء_الدين"]
+                "مدة_السداد_شهر", "القسط_الشهري_الجديد", "نسبة_عبء_الدين",
+                "نسبة_ثقة_الدخل"]
 CAT_FEATURES = ["جهة_العمل", "نوع_السلعة"]
 TARGET = "مستوى_الخطر"
 
@@ -132,6 +137,10 @@ class AssessRequest(BaseModel):
     tenure: int = Field(..., description="مدة التوظيف بالأشهر")
     emp: str = Field("حكومي", description="جهة العمل")
     age: int = Field(35, description="العمر")
+    # كشف الحساب من المصرفية المفتوحة — منه تُحتسب ثقة الدخل.
+    # إن لم يُرسل، نستخدم incomeConfidence مباشرة أو نفترض دخلاً غير موثّق.
+    transactions: list[dict] | None = Field(None, description='[{"amount":6500,"type":"credit"}]')
+    incomeConfidence: int | None = Field(None, ge=0, le=100, description="0-100 إن حُسبت مسبقاً")
 
 
 @app.get("/")
@@ -151,10 +160,22 @@ def assess(req: AssessRequest):
     installment = req.amount * (1 + MARGIN_RATE * (req.term / 12)) / req.term
     dbr = (req.oblig + installment) / req.salary if req.salary else 0.0
 
+    # ثقة الدخل: تُحتسب من كشف الحساب إن توفّر، وإلا تُستخدم القيمة الممرَّرة.
+    # بدون أيٍّ منهما لا نفترض دخلاً موثّقاً — الغياب ليس دليل صحة.
+    if req.transactions:
+        income = calculate_income_confidence(req.salary, req.transactions)
+    elif req.incomeConfidence is not None:
+        income = {"score": req.incomeConfidence, "label": "—", "detected_income": None,
+                  "deposits_count": 0, "evidence": "أُدخلت ثقة الدخل مباشرة دون كشف حساب."}
+    else:
+        income = {"score": 20, "label": "دخل غير مؤكد", "detected_income": None,
+                  "deposits_count": 0,
+                  "evidence": "لم يُربط كشف الحساب — الدخل المُصرَّح غير موثّق."}
+
     # بناء متجه الخصائص بترتيب النموذج
     feat = [
         req.age, req.tenure, req.salary, req.oblig, req.credit,
-        req.amount, req.term, installment, dbr,
+        req.amount, req.term, installment, dbr, income["score"],
         engine.encode_cat("جهة_العمل", req.emp),
         engine.encode_cat("نوع_السلعة", req.item),
     ]
@@ -167,6 +188,7 @@ def assess(req: AssessRequest):
         "confidence": round(confidence * 100),
         "installment": round(installment),
         "dbr": round(dbr, 3),
+        "incomeConfidence": income,          # score + label + evidence بأرقام فعلية
         "modelAccuracy": engine.accuracy,
         "highRiskPrecision": engine.high_precision,
         "highRiskRecall": engine.high_recall,

@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { MobileContainer } from "@/components/MobileContainer";
-import { ChevronRight, CheckCircle2, AlertTriangle, XCircle, Loader2, Cpu, WifiOff, Store, X, Users } from "lucide-react";
+import { ChevronRight, CheckCircle2, AlertTriangle, XCircle, Loader2, Cpu, WifiOff, Store, X, Users, FileCheck } from "lucide-react";
 import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import OpenBankingConnect from "@/components/OpenBankingConnect";
 import ContractExecution from "@/components/ContractExecution";
+import { type Txn } from "@/lib/AccountProvider";
 import { SAIBOR_3M, RISK_SPREAD, returnRateFor, totalProfit, type RiskLevel as PricingLevel } from "@/lib/saibor";
 
 // خيارات نوع السلعة في النموذج (لمطابقة القيمة القادمة من المتجر)
@@ -26,6 +27,7 @@ interface AssessResult {
   source: "api" | "local";              // مصدر التقييم: نموذج حقيقي أم منطق محلي
   modelAccuracy?: number;                // الدقة الإجمالية (عند المصدر api)
   highRiskPrecision?: number;            // دقة التنبؤ بالحالات المرتفعة الخطورة
+  incomeConfidence?: { score: number; label: string; evidence: string };  // تحقّق الدخل بأرقام محسوبة
   importances?: { name: string; value: number }[]; // أوزان عوامل النموذج
 }
 
@@ -80,6 +82,9 @@ export default function CrowdFinance() {
   const [emp, setEmp]       = useState("حكومي");
   const [assessing, setAssessing] = useState(false);
 
+  // كشف الحساب من المصرفية المفتوحة — يُرسل للنموذج ليحتسب ثقة الدخل
+  const [txns, setTxns] = useState<Txn[] | null>(null);
+
   // قادم من المتجر (عبر query params): اسم المنتج لعرضه في التنبيه
   const [fromStore, setFromStore] = useState<string | null>(null);
 
@@ -110,6 +115,7 @@ export default function CrowdFinance() {
       const api = await assessViaApi({
         item, amount: +amount, term: +term, salary: +salary,
         oblig: +oblig, credit: +credit, tenure: +tenure, emp,
+        transactions: txns ?? undefined,
       });
       setResult({
         level: api.level,
@@ -123,6 +129,7 @@ export default function CrowdFinance() {
         source: "api",
         modelAccuracy: api.modelAccuracy,
         highRiskPrecision: api.highRiskPrecision,
+        incomeConfidence: api.incomeConfidence,
         importances: api.importances,
       });
     } catch {
@@ -201,7 +208,8 @@ export default function CrowdFinance() {
 
               {/* المصرفية المفتوحة الكاملة — تملأ حقول الطلب تلقائياً (مع إبقاء التعديل اليدوي) */}
               <OpenBankingConnect
-                onFilled={({ salary, oblig, credit }) => {
+                onFilled={({ salary, oblig, credit, transactions }) => {
+                  setTxns(transactions);
                   setSalary(String(salary));
                   setOblig(String(oblig));
                   setCredit(String(credit));
@@ -318,6 +326,31 @@ export default function CrowdFinance() {
                       </span>
                     )}
                   </div>
+
+                  {/* تحقّق الدخل — كل رقم هنا محسوب من كشف الحساب لا ادّعاء عام */}
+                  {result.incomeConfidence && (
+                    <div className={`rounded-xl p-3 mb-3 border ${
+                      result.incomeConfidence.score >= 80 ? "bg-green-500/10 border-green-500/30"
+                      : result.incomeConfidence.score >= 50 ? "bg-amber-500/10 border-amber-500/30"
+                      : "bg-red-500/10 border-red-500/30"
+                    }`}>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-[11px] font-black text-foreground flex items-center gap-1.5">
+                          <FileCheck className="w-3.5 h-3.5" /> تحقّق الدخل من كشف الحساب
+                        </span>
+                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                          result.incomeConfidence.score >= 80 ? "bg-green-500/20 text-green-700 dark:text-green-400"
+                          : result.incomeConfidence.score >= 50 ? "bg-amber-500/20 text-amber-700 dark:text-amber-400"
+                          : "bg-red-500/20 text-red-700 dark:text-red-400"
+                        }`}>
+                          {result.incomeConfidence.score}% · {result.incomeConfidence.label}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground leading-relaxed">
+                        {result.incomeConfidence.evidence}
+                      </p>
+                    </div>
+                  )}
 
                   {/* مقاييس أداء النموذج — نُبرز دقة اكتشاف الحالات المرتفعة (الأهم لحماية المساهمين) */}
                   {result.source === "api" && (
