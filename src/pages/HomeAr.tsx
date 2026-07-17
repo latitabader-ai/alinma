@@ -94,7 +94,8 @@ export default function HomeAr() {
 
         {/* Promo Card — إعلان التمويل الجماعي */}
         <Link href="/crowd-finance">
-          <div className="bg-gradient-to-br from-accent to-orange-500 rounded-3xl p-5 relative overflow-hidden shadow-md cursor-pointer active:scale-[0.98] transition-transform">
+          {/* إعلان بهوية ثابتة (كبانر فانتزي) — كحلي الإنماء إلى أزرقه، فالنص الأبيض يعمل في الوضعين */}
+          <div className="bg-gradient-to-br from-[#0d2c54] to-[#1565b8] rounded-3xl p-5 relative overflow-hidden shadow-md cursor-pointer active:scale-[0.98] transition-transform">
             {/* خلفية: مساهمون يلتقون حول هدف واحد */}
             <div className="absolute inset-0 opacity-25" aria-hidden="true">
               <svg viewBox="0 0 320 160" preserveAspectRatio="xMidYMid slice" className="w-full h-full">
@@ -127,7 +128,7 @@ export default function HomeAr() {
                 يشترك عدة مساهمين في تمويل طلبك — تحصل على ما تريد اليوم وتسدّده بأقساط،
                 وهم يربحون عائداً حلالاً من ربح المرابحة.
               </p>
-              <span className="bg-white text-accent px-3 py-1.5 rounded-full inline-flex items-center gap-1 text-xs font-black">
+              <span className="bg-white text-[#0d2c54] px-3 py-1.5 rounded-full inline-flex items-center gap-1 text-xs font-black">
                 ابدأ الآن <ChevronLeft className="w-3.5 h-3.5" />
               </span>
             </div>

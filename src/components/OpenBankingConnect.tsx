@@ -19,8 +19,9 @@ const OB_STEPS = [
   "جلب التصنيف الائتماني (سمة)",
 ];
 
+// شعارات البنوك بألوان ثابتة (هوية كل بنك) — النص أبيض عليها في الوضعين
 const OB_BANKS = [
-  { id: "alinma", short: "الإنماء", color: "bg-accent" },
+  { id: "alinma", short: "الإنماء", color: "bg-[#0F5299]" },
   { id: "rajhi",  short: "الراجحي", color: "bg-blue-600" },
   { id: "snb",    short: "الأهلي",  color: "bg-emerald-600" },
   { id: "riyad",  short: "الرياض",  color: "bg-indigo-600" },
@@ -81,26 +82,26 @@ export default function OpenBankingConnect({ onFilled }: Props) {
         className={`w-full rounded-3xl p-5 flex items-center gap-4 text-right transition-all shadow-lg ${
           obStatus === "done"
             ? "bg-green-500/10 border-2 border-green-500/50"
-            : "bg-gradient-to-br from-accent to-orange-500 border-2 border-accent active:scale-[0.98] shadow-accent/30"
+            : "bg-gradient-to-br from-accent to-accent/75 border-2 border-accent active:scale-[0.98] shadow-accent/30"
         }`}
       >
-        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${obStatus === "done" ? "bg-green-500/20" : "bg-white/20"}`}>
-          {obStatus === "loading" ? <Loader2 className="w-7 h-7 animate-spin text-white" />
+        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${obStatus === "done" ? "bg-green-500/20" : "bg-accent-foreground/20"}`}>
+          {obStatus === "loading" ? <Loader2 className="w-7 h-7 animate-spin text-accent-foreground" />
             : obStatus === "done" ? <ShieldCheck className="w-7 h-7 text-green-500" />
-            : <Landmark className="w-7 h-7 text-white" />}
+            : <Landmark className="w-7 h-7 text-accent-foreground" />}
         </div>
         <div className="flex-1 min-w-0">
-          <p className={`text-base font-black ${obStatus === "done" ? "text-green-600 dark:text-green-400" : "text-white"}`}>
+          <p className={`text-base font-black ${obStatus === "done" ? "text-green-600 dark:text-green-400" : "text-accent-foreground"}`}>
             {obStatus === "done" ? connectedLabel : "ربط سريع عبر المصرفية المفتوحة"}
           </p>
-          <p className={`text-[11px] mt-1 leading-relaxed ${obStatus === "done" ? "text-muted-foreground" : "text-white/90"}`}>
+          <p className={`text-[11px] mt-1 leading-relaxed ${obStatus === "done" ? "text-muted-foreground" : "text-accent-foreground/90"}`}>
             {obStatus === "loading" ? "جارٍ جلب بياناتك المالية بأمان..." :
              obStatus === "done" ? "تم ملء الحقول تلقائياً · يمكنك التعديل يدوياً" :
              "جلب الراتب والالتزامات والتصنيف الائتماني تلقائياً · بدون إدخال يدوي"}
           </p>
         </div>
         {obStatus === "idle" && (
-          <span className="flex items-center gap-1 text-xs font-black text-accent bg-white px-3 py-2 rounded-xl shrink-0 shadow">
+          <span className="flex items-center gap-1 text-xs font-black text-accent bg-background px-3 py-2 rounded-xl shrink-0 shadow">
             اربط الآن<ChevronLeft className="w-4 h-4" />
           </span>
         )}
@@ -182,7 +183,7 @@ export default function OpenBankingConnect({ onFilled }: Props) {
                       <span className={`w-8 h-8 rounded-lg ${bank.color} text-white flex items-center justify-center text-xs font-black shrink-0`}>{bank.short.charAt(0)}</span>
                       <span className="text-[11px] font-bold text-foreground leading-tight flex-1">{bank.short}</span>
                       <span className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 ${on ? "bg-accent" : "border-2 border-muted-foreground/30"}`}>
-                        {on && <CheckCircle2 className="w-4 h-4 text-white" />}
+                        {on && <CheckCircle2 className="w-4 h-4 text-accent-foreground" />}
                       </span>
                     </button>
                   );
