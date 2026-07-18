@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { MobileContainer } from "@/components/MobileContainer";
-import { ChevronRight, CheckCircle2, AlertTriangle, XCircle, Loader2, Cpu, WifiOff, Store, X, Users, FileCheck } from "lucide-react";
+import { ChevronRight, CheckCircle2, AlertTriangle, XCircle, Loader2, Cpu, WifiOff, Store, X, Users, FileCheck, Lock } from "lucide-react";
 import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -84,6 +84,8 @@ export default function CrowdFinance() {
 
   // كشف الحساب من المصرفية المفتوحة — يُرسل للنموذج ليحتسب ثقة الدخل
   const [txns, setTxns] = useState<Txn[] | null>(null);
+  // الراتب والالتزامات لا يُدخلان يدوياً — يُجلبان عبر المصرفية المفتوحة فقط
+  const [obLinked, setObLinked] = useState(false);
 
   // قادم من المتجر (عبر query params): اسم المنتج لعرضه في التنبيه
   const [fromStore, setFromStore] = useState<string | null>(null);
@@ -214,6 +216,7 @@ export default function CrowdFinance() {
                   setOblig(String(oblig));
                   setCredit(String(credit));
                   setTenure("48");
+                  setObLinked(true);
                 }}
               />
 
@@ -266,12 +269,35 @@ export default function CrowdFinance() {
                     </p>
                   </div>
                 )}
+                {/* الراتب والالتزامات تلقائية عبر المصرفية المفتوحة — لا إدخال يدوي */}
                 <div className="grid grid-cols-2 gap-3">
-                  <div><label className="block text-xs text-muted-foreground font-bold mb-1.5">الراتب الشهري (ريال)</label>
-                    <input type="number" value={salary} onChange={e=>setSalary(e.target.value)} className={inputClass}/></div>
-                  <div><label className="block text-xs text-muted-foreground font-bold mb-1.5">الالتزامات الشهرية</label>
-                    <input type="number" value={oblig} onChange={e=>setOblig(e.target.value)} className={inputClass}/></div>
+                  <div>
+                    <label className="flex items-center gap-1 text-xs text-muted-foreground font-bold mb-1.5">
+                      الراتب الشهري (ريال)
+                      {obLinked
+                        ? <CheckCircle2 className="w-3 h-3 text-green-500" />
+                        : <Lock className="w-3 h-3 text-muted-foreground" />}
+                    </label>
+                    <input type="number" value={salary} readOnly aria-readonly="true"
+                      className={`${inputClass} cursor-not-allowed ${obLinked ? "bg-green-500/5 border-green-500/30" : "opacity-60"}`} />
+                  </div>
+                  <div>
+                    <label className="flex items-center gap-1 text-xs text-muted-foreground font-bold mb-1.5">
+                      الالتزامات الشهرية
+                      {obLinked
+                        ? <CheckCircle2 className="w-3 h-3 text-green-500" />
+                        : <Lock className="w-3 h-3 text-muted-foreground" />}
+                    </label>
+                    <input type="number" value={oblig} readOnly aria-readonly="true"
+                      className={`${inputClass} cursor-not-allowed ${obLinked ? "bg-green-500/5 border-green-500/30" : "opacity-60"}`} />
+                  </div>
                 </div>
+                {!obLinked && (
+                  <p className="flex items-center gap-1.5 text-[10px] text-muted-foreground bg-muted rounded-lg px-2.5 py-2 -mt-1">
+                    <Lock className="w-3 h-3 text-accent shrink-0" />
+                    الراتب والالتزامات تُجلب تلقائياً من كشف حسابك عبر <span className="font-bold text-foreground">ربط المصرفية المفتوحة</span> — لا تُدخل يدوياً لضمان دقّتها.
+                  </p>
+                )}
                 <div className="grid grid-cols-2 gap-3">
                   <div><label className="block text-xs text-muted-foreground font-bold mb-1.5">التصنيف الائتماني (سمة)</label>
                     <input type="number" value={credit} onChange={e=>setCredit(e.target.value)} className={inputClass}/></div>
